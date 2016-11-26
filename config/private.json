@@ -1,0 +1,20 @@
+{
+	"ssh_defaults": [
+		"-q",
+		"-F/dev/null",
+		"-oPasswordAuthentication=no",
+		"-oUseRoaming=no",
+		"-oStrictHostKeyChecking=no",
+		"-oConnectTimeout=5",
+		"-oServerAliveCountMax=30",
+		"-oServerAliveInterval=1",
+		"-oControlPath=/tmp/%r@%h:%p",
+		"-oControlMaster=auto",
+		"-oControlPersist=3600"
+	],
+	"queue": {
+		"probe": 5,
+		"websocket": 20,
+		"global": 50
+	}
+}

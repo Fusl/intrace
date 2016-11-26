@@ -1,0 +1,32 @@
+[
+	{
+		"country": "United States",
+		"city": "Los Angeles",
+		"unlocode": "uslax",
+		"provider": "Provider Name",
+		"asnumber": 12345,
+		"host": "root@uslax.yourserver.tld",
+		"group": "North america",
+		"caps": {
+			"bgp": 4,
+			"mtr": 6,
+			"trace": true,
+			"ping": true
+		}
+	},
+	{
+		"country": "Austria",
+		"city": "Vienna",
+		"unlocode": "atvie",
+		"provider": "Another Provider",
+		"asnumber": 23456,
+		"host": "root@atvie.somewhere.else",
+		"group": "Europe",
+		"caps": {
+			"bgp": 6,
+			"mtr": false,
+			"trace": false,
+			"ping": 4
+		}
+	}
+]
