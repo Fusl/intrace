@@ -272,13 +272,4 @@ io.on('connection', function(socket) {
 	});
 });
 
-app.get('/', function (req, res, next) {
-	if (req.headers['x-requested-with'] === 'XMLHttpRequest') {
-		res.status(200);
-		res.setHeader('Content-Type', 'text/html');
-		return res.end('<!DOCTYPE html>\n<html lang="en"><head></head><body></body></html>');
-	}
-	next();
-});
-
 app.use(express.static('static'));
