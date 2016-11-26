@@ -30,9 +30,11 @@ var setstatus = function (probe, status) {
 		return;
 	}
 	if (probes[probe].status !== status) {
-		console.log(new Date(), probe, probes[probe].host, probes[probe].status, '->', status);
+		if (config.logs.status) {
+			console.log(new Date(), probe, probes[probe].host, probes[probe].status, '->', status);
+		}
+		probes[probe].status = status;
 	}
-	probes[probe].status = status;
 };
 
 var hostcheck = function (probe) {
@@ -199,6 +201,9 @@ app.get(/^\/([a-z0-9]{32})\/([a-z]+)\/([0-9a-f:\.]{1,39})$/, function (req, res)
 		probe: query.probe,
 		command: (caps[query.type]['cmd' + proto] ? caps[query.type]['cmd' + proto] : caps[query.type]['cmd'] ? caps[query.type]['cmd'] : 'echo unsupported').replace(/{{TARGET}}/g, query.target).replace(/{{PROTO}}/g, proto)
 	});	
+	if (config.logs.requests && config.logs.requests.http) {
+		console.log(new Date(), 'enqueue-http', 'remote=' + (config.logs.use_x_forwarded_for ? req.headers['x-forwarded-for'] : req.socket.remoteAddress), 'type=' + query.type, 'probe=' + query.probe, 'target=' + query.target);
+	}
 });
 
 io.on('connection', function(socket) {
@@ -261,6 +266,9 @@ io.on('connection', function(socket) {
 			probe: query.probe,
 			command: (caps[query.type]['cmd' + proto] ? caps[query.type]['cmd' + proto] : caps[query.type]['cmd'] ? caps[query.type]['cmd'] : 'echo unsupported').replace(/{{TARGET}}/g, query.target).replace(/{{PROTO}}/g, proto)
 		});
+		if (config.logs.requests && config.logs.requests.websocket) {
+			console.log(new Date(), 'enqueue-websocket', 'remote=' + (config.logs.use_x_forwarded_for ? socket.client.request.headers['x-forwarded-for'] : socket.request.connection.remoteAddress), 'type=' + query.type, 'probe=' + query.probe, 'target=' + query.target);
+		}
 	});
 });
 

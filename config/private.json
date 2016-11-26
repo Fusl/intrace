@@ -16,5 +16,13 @@
 		"probe": 5,
 		"websocket": 20,
 		"global": 50
+	},
+	"logs": {
+		"status": true,
+		"requests": {
+			"http": true,
+			"websocket": true
+		},
+		"use_x_forwarded_for": true
 	}
 }
