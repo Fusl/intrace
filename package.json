@@ -1,0 +1,34 @@
+{
+  "name": "intrace",
+  "version": "0.0.1",
+  "description": "Multi-probe looking glass with simple but powerful configuration for probes and lookup types (BIRD, MTR, Ping & Traceroute pre-configured)",
+  "main": "lg.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Fusl/intrace.git"
+  },
+  "author": "Fusl",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/Fusl/intrace/issues"
+  },
+  "homepage": "https://github.com/Fusl/intrace#readme",
+  "dependencies": {
+    "async": "*",
+    "ipaddr.js": "*",
+    "md5": "*",
+    "express": "*",
+    "socket.io": "*"
+  },
+  "keywords": [
+    "looking",
+    "glass",
+    "ping",
+    "mtr",
+    "traceroute",
+    "bgp"
+  ]
+}
