@@ -25,7 +25,7 @@ var caps = require('./config/caps.json');
 
 var probes = Object.create(null);
 
-var setstatus = function (probe, status, nofollow) {
+var setstatus = function (probe, status) {
 	if (!probes[probe]) {
 		return;
 	}
@@ -33,9 +33,6 @@ var setstatus = function (probe, status, nofollow) {
 		console.log(new Date(), probe, probes[probe].host, probes[probe].status, '->', status);
 	}
 	probes[probe].status = status;
-	if (nofollow) {
-		return;
-	}
 };
 
 var hostcheck = function (probe) {
