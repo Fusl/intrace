@@ -24,5 +24,8 @@
 			"websocket": true
 		},
 		"use_x_forwarded_for": true
+	},
+	"http": {
+		"port": 8080
 	}
 }

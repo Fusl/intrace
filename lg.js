@@ -14,7 +14,6 @@ var socketio      = require('socket.io');
 var app = express();
 var server = http.createServer(app);
 var io = socketio(server);
-server.listen(8080);
 
 var is_bogon_v4 = require('./libs/is_bogon_v4.js');
 var is_bogon_v6 = require('./libs/is_bogon_v6.js');
@@ -273,3 +272,5 @@ io.on('connection', function(socket) {
 });
 
 app.use(express.static('static'));
+
+server.listen(Number(process.env.PORT) || Number(config.http.port) || 3000);
