@@ -3,7 +3,7 @@
 		"name": "BGP Route Table Dump",
 		"highlight": "BGP.as_path: ",
 		"cmd4": "birdc -r 'show route all for {{TARGET}} primary' 2> /dev/null | tail -n+3 | fgrep -v -e 'BGP.next_hop: ' -e 'BGP.origin: ' -e 'BGP.local_pref: ' | sed -r 's/ from [0-9\\.]+\\]/ from 0.0.0.0]/'",
-		"cmd6": "birdc6 -r 'show route all for {{TARGET}} primary' 2> /dev/null | tail -n+3 | | fgrep -v -e 'BGP.next_hop: ' -e 'BGP.origin: ' -e 'BGP.local_pref: ' | sed -r 's/ from [a-f0-9:]+\\]/ from ::]/'"
+		"cmd6": "birdc6 -r 'show route all for {{TARGET}} primary' 2> /dev/null | tail -n+3 | fgrep -v -e 'BGP.next_hop: ' -e 'BGP.origin: ' -e 'BGP.local_pref: ' | sed -r 's/ from [a-f0-9:]+\\]/ from ::]/'"
 	},
 	"mtr": {
 		"name": "MTR",
