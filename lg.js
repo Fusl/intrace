@@ -22,6 +22,8 @@ var config = require('./config/private.json');
 var public_config = require('./config/public.json');
 var caps = require('./config/caps.json');
 
+var shutdown = false;
+
 var probes = Object.create(null);
 
 var setstatus = function (probe, status) {
@@ -169,6 +171,7 @@ app.get(/^\/([a-z0-9]{32})\/([a-z]+)\/([0-9a-f:\.]{1,39})$/, function (req, res)
 		target: req.params[2]
 	};
 	if (
+		shutdown ||
 		!query.type ||
 		!query.probe ||
 		!query.target ||
@@ -223,6 +226,7 @@ io.on('connection', function(socket) {
 			return;
 		}
 		if (
+			shutdown ||
 			!query.type ||
 			!query.probe ||
 			!query.target ||
@@ -274,3 +278,15 @@ io.on('connection', function(socket) {
 app.use(express.static('static'));
 
 server.listen(Number(process.env.PORT) || Number(config.http.port) || 3000);
+
+process.on('SIGINT', function () {
+	if (shutdown || !(execqueue.length() + execqueue.running())) {
+		return process.exit(0);
+	}
+	shutdown = true; // Don't accept any more exec requests over websocket or keep-alive HTTP connections
+	server.close(); // Close down the HTTP server
+	console.log('^C pressed - Clean shutdown initiated (waiting for ' + (execqueue.length() + execqueue.running()) + ' tasks to finish) - Press ^C again to exit immediately');
+	execqueue.drain = function () {
+		process.exit(0);
+	};
+});
