@@ -149,9 +149,18 @@ app.get('/config.json', function (req, res) {
 });
 
 app.get('/probes.json', function (req, res) {
-	var probelist = JSON.parse(JSON.stringify(probes));
-	Object.keys(probelist).forEach(function (probe) {
-		delete probelist[probe].host;
+	var probelist = Object.create(null);
+	Object.keys(probes).forEach(function (probe) {
+		probelist[probes] = {
+			country: probes[probe].country,
+			city: probes[probe].city,
+			unlocode: probes[probe].unlocode,
+			provider: probes[probe].provider,
+			asnumber: probes[probe].asnumber,
+			group: probes[probe].group,
+			caps: probes[probe].caps,
+			status: probes[probe].status
+		};
 	});
 	res.status(200);
 	res.setHeader('Content-Type', 'application/json');
