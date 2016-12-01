@@ -151,7 +151,7 @@ app.get('/config.json', function (req, res) {
 app.get('/probes.json', function (req, res) {
 	var probelist = Object.create(null);
 	Object.keys(probes).forEach(function (probe) {
-		probelist[probes] = {
+		probelist[probe] = {
 			country: probes[probe].country,
 			city: probes[probe].city,
 			unlocode: probes[probe].unlocode,
