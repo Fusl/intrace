@@ -175,6 +175,7 @@ jQuery(document).ready(function() {
 			return alert('The selected probes are not capable of doing this kind of query/queries');
 		}
 		jQuery('#target').blur();
+		jQuery('#runtest').blur();
 		jQuery(this)[0].reset();
 		jQuery.scrollTo('#results', {duration: 250});
 	});
