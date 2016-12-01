@@ -8,19 +8,19 @@
 	"mtr": {
 		"name": "MTR",
 		"highlight": 1,
-		"cmd4": "mtr -4zboLDRSNBAWVGJMXI -rwc10 -i 0.2 -m 30 {{TARGET}} 2> /dev/null | tail -n+2 | perl -pe 's/^(HOST: ([^ ]+))/\" \" x length($1)/gei'",
-		"cmd6": "mtr -6zboLDRSNBAWVGJMXI -rwc10 -i 0.2 -m 30 {{TARGET}} 2> /dev/null | tail -n+2 | perl -pe 's/^(HOST: ([^ ]+))/\" \" x length($1)/gei'"
+		"cmd4": "mtr -4zboLDRSNBAWVGJMXI -rwc10 -i 0.2 -m 50 {{TARGET}} 2> /dev/null | tail -n+2 | perl -pe 's/^(HOST: ([^ ]+))/\" \" x length($1)/gei'",
+		"cmd6": "mtr -6zboLDRSNBAWVGJMXI -rwc10 -i 0.2 -m 50 {{TARGET}} 2> /dev/null | tail -n+2 | perl -pe 's/^(HOST: ([^ ]+))/\" \" x length($1)/gei'"
 	},
 	"trace": {
 		"name": "Traceroute",
 		"highlight": 1,
-		"cmd4": "traceroute -q5 -w 2 -4 -m 30 {{TARGET}} 2> /dev/null",
-		"cmd6": "traceroute -q5 -w 2 -6 -m 30 {{TARGET}} 2> /dev/null"
+		"cmd4": "traceroute -q5 -w 2 -4 -m 50 {{TARGET}} 2> /dev/null",
+		"cmd6": "traceroute -q5 -w 2 -6 -m 50 {{TARGET}} 2> /dev/null"
 	},
 	"ping": {
 		"name": "Ping",
 		"highlight": 2,
-		"cmd4": "ping -c 10 -i 0.2 -t 30 {{TARGET}} 2>&1",
-		"cmd6": "ping6 -c 10 -i 0.2 -t 30 {{TARGET}} 2>&1"
+		"cmd4": "ping -c 10 -i 0.2 -t 255 {{TARGET}} 2>&1",
+		"cmd6": "ping6 -c 10 -i 0.2 -t 255 {{TARGET}} 2>&1"
 	}
 }
