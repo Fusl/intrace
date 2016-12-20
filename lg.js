@@ -197,6 +197,8 @@ app.get(/^\/([a-z0-9]{32})\/([a-z]+)\/([0-9a-f:\.]{1,39})$/, function (req, res)
 	var proto = ipaddrjs.IPv4.isValidFourPartDecimal(query.target) ? 4 : ipaddrjs.IPv6.isValid(query.target) ? 6 : null;
 	if (
 		!proto ||
+		(proto === 4 && is_bogon_v4(query.target)) ||
+		(proto === 6 && is_bogon_v6(query.target)) ||
 		!(
 			probes[query.probe].caps[query.type] === true ||
 			probes[query.probe].caps[query.type] === Number(proto)
@@ -251,6 +253,8 @@ io.on('connection', function(socket) {
 		var proto = ipaddrjs.IPv4.isValidFourPartDecimal(query.target) ? 4 : ipaddrjs.IPv6.isValid(query.target) ? 6 : null;
 		if (
 			!proto ||
+			(proto === 4 && is_bogon_v4(query.target)) ||
+			(proto === 6 && is_bogon_v6(query.target)) ||
 			!(
 				probes[query.probe].caps[query.type] === true ||
 				probes[query.probe].caps[query.type] === Number(proto)
