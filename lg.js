@@ -22,6 +22,41 @@ var config = require('./config/private.json');
 var public_config = require('./config/public.json');
 var caps = require('./config/caps.json');
 
+var cvalidator = {
+	object: function (str) { return str && typeof str === 'object' && str instanceof Object;                       },
+	array:  function (str) { return str && typeof str === 'object' && str instanceof Array;                        },
+	string: function (str) { return str && typeof str === 'string';                                                },
+	text:   function (str) { return str && typeof str === 'string' && str.trim() !== '';                           },
+	int:    function (str) { return typeof str === 'number' && !isNaN(str) && str === Math.round(str);             },
+	uint:   function (str) { return typeof str === 'number' && !isNaN(str) && str === Math.round(str) && str >= 0; },
+	bool:   function (str) { return str === true || str === false;                                                 }
+};
+var cvalid = function (name, str, type, defaultvar) {
+	if (!cvalidator[type](str)) {
+		if (typeof defaultvar === 'undefined') {
+			throw new Error('Configuration key ' + name + ' missing or invalid - Type of value is not ' + type);
+		}
+		return defaultvar;
+	}
+	return str;
+};
+
+cvalid('private.json',                            config,                          'object');
+cvalid('private.json->probe_id_hash',             config.probe_id_hash,            'text'  );
+cvalid('private.json->ssh_defaults',              config.ssh_defaults,             'object');
+cvalid('private.json->queue',                     config.queue,                    'object');
+cvalid('private.json->queue->probe',              config.queue.probe,              'uint'  );
+cvalid('private.json->queue->websocket',          config.queue.websocket,          'uint'  );
+cvalid('private.json->queue->global',             config.queue.global,             'uint'  );
+cvalid('private.json->logs',                      config.logs,                     'object');
+cvalid('private.json->logs->status',              config.logs.status,              'bool'  );
+cvalid('private.json->logs->requests',            config.logs.requests,            'object');
+cvalid('private.json->logs->requests->http',      config.logs.requests.http,       'bool'  );
+cvalid('private.json->logs->requests->websocket', config.logs.requests.websocket,  'bool'  );
+cvalid('private.json->logs->use_x_forwarded_for', config.logs.use_x_forwarded_for, 'bool'  );
+cvalid('private.json->http',                      config.http,                     'object');
+cvalid('private.json->http->port',                config.http.port,                'uint'  );
+
 var shutdown = false;
 
 var probes = Object.create(null);
@@ -43,6 +78,8 @@ var hostcheck = function (probe) {
 		return;
 	}
 	var proc = child_process.spawn('ssh', config.ssh_defaults.concat([
+		'-p',
+		probes[probe].port || 22,
 		probes[probe].host,
 		'exit 0'
 	]));
@@ -67,6 +104,8 @@ var hostexec = function (probe, command, resock, done) {
 		resock.end() + done();
 	}, timeout_time);
 	var proc = child_process.spawn('ssh', config.ssh_defaults.concat([
+		'-p',
+		probes[probe].port || 22,
 		probes[probe].host,
 		command
 	]));
@@ -123,13 +162,23 @@ var execqueue = async.queue(function (task, callback) {
 }, config.queue.global);
 
 require('./config/probes.json').forEach(function (host) {
+	cvalid('probes.json->*->host->country',  host.country,  'text');
+	cvalid('probes.json->*->host->city',     host.city,     'text');
+	cvalid('probes.json->*->host->unlocode', host.unlocode, 'text');
+	cvalid('probes.json->*->host->provider', host.provider, 'text');
+	cvalid('probes.json->*->host->asnumber', host.asnumber, 'uint');
+	cvalid('probes.json->*->host->host',     host.host,     'text');
+	cvalid('probes.json->*->host->group',    host.group,    'text');
+	cvalid('probes.json->*->host->caps',     host.caps,     'object');
 	var probe = md5([
+		config.probe_id_hash,
 		host.country,
 		host.city,
 		host.unlocode,
 		host.provider,
 		host.asnumber,
-		host.host
+		host.host,
+		host.group
 	].join('\0'));
 	host.status = null;
 	host.queue = async.queue(function (task, callback) {
@@ -152,14 +201,15 @@ app.get('/probes.json', function (req, res) {
 	var probelist = Object.create(null);
 	Object.keys(probes).forEach(function (probe) {
 		probelist[probe] = {
-			country: probes[probe].country,
-			city: probes[probe].city,
-			unlocode: probes[probe].unlocode,
-			provider: probes[probe].provider,
-			asnumber: probes[probe].asnumber,
-			group: probes[probe].group,
-			caps: probes[probe].caps,
-			status: probes[probe].status
+			country:     probes[probe].country,
+			city:        probes[probe].city,
+			unlocode:    probes[probe].unlocode,
+			provider:    probes[probe].provider,
+			asnumber:    probes[probe].asnumber,
+			residential: probes[probe].residential,
+			group:       probes[probe].group,
+			caps:        probes[probe].caps,
+			status:      probes[probe].status
 		};
 	});
 	res.status(200);

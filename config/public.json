@@ -2,7 +2,7 @@
 	"html": {
 		"title": "FuslVZ Looking Glass",
 		"header": "<h1>FuslVZ <small>Looking Glass</small></h1>",
-		"footer": "<p style=\"float: left;\"><a href=\"http://webchat.freenode.net?randomnick=1&channels=%23fuslvz\">chat.freenode.net #fuslvz</a> | <a href=\"https://twitter.com/fuslvz\">@FuslVZ</a> | <a target=\"_blank\" href=\"https://github.com/Fusl/intrace/wiki\">API Docs</a></p><p style=\"float: right;\">&copy; 2016 <a href=\"http://fuslvz.ws/\">FuslVZ Ltd.</a></p><div style=\"clear: both;\"></div>",
+		"footer": "<p style=\"float: left;\"><a href=\"http://webchat.freenode.net?randomnick=1&channels=%23fuslvz\">chat.freenode.net #fuslvz</a> | <a href=\"https://twitter.com/fuslvz\">@FuslVZ</a> | <a target=\"_blank\" href=\"https://github.com/Fusl/intrace/wiki\">API Docs</a></p><p style=\"float: right;\">&copy; 2017 <a href=\"http://fuslvz.ws/\">FuslVZ Ltd.</a></p><div style=\"clear: both;\"></div>",
 		"columned_probes": false
 	}
 }
