@@ -67,8 +67,9 @@ jQuery(document).ready(function() {
 				return config.html.columned_probes ? (
 					(lastgroup !== null && lastgroup !== probes[probe].group ? '</div>' : '') +
 					(lastgroup !== probes[probe].group ? '<div class="col-xs-12 col-sm-6 col-md-6 col-lg-4 col-xl-3"><div data-group="' + probes[probe].group + '"><h3>' + (lastgroup = probes[probe].group) + ' <small><a href="#" class="groupheader-toggle">Toggle all</a></small></h3></div>' : '') +
-					'<div style="background-image: url(\'/flags/' + probes[probe].unlocode.toLowerCase().replace(/^(..)(...)$/, '$1') + '.png\'); ' + (probes[probe].residential ? 'border-left: 10px solid #337ab7; padding-left: 32px; background-position: 5px;' : '') + '" class="cap_probe countryflag">' +
+					'<div style="' + (probes[probe].residential ? 'border-left: 5px solid #337ab7; padding-left: 10px; background-position: 5px;' : '') + '" class="cap_probe">' +
 						'<div style="float: left;">' +
+							'<img src="/flags/' + probes[probe].unlocode.toLowerCase().replace(/^(..)(...)$/, '$1') + '.png" style="cursor: pointer;" class="country-toggle"> ' +
 							'<input id="probe_' + probe + '" data-residential="' + probes[probe].residential + '" data-group="' + probes[probe].group + '" data-unlocode="' + probes[probe].unlocode + '" data-country="' + probes[probe].country + '" data-city="' + probes[probe].city + '" data-provider="' + probes[probe].provider + '" data-asnumber="' + probes[probe].asnumber + '" ' + Object.keys(probes[probe].caps).map(function(cap){return 'data-cap'+cap+'="' + probes[probe].caps[cap] + '"';}).join(' ') + ' ' + (!probes[probe].status ? 'disabled ' : '') + 'data-toggle="probestoggle" data-on="' + probes[probe].unlocode.toUpperCase().replace(/^(..)(...)$/, '$1-$2') + '" data-off="' + probes[probe].unlocode.toUpperCase().replace(/^(..)(...)$/, '$1-$2') + '" type="checkbox" class="probe_checkbox"> ' +
 							probes[probe].city +
 						'</div>' +
@@ -79,8 +80,9 @@ jQuery(document).ready(function() {
 					'</div>'
 				) : (
 					(lastgroup !== probes[probe].group ? '<div data-group="' + probes[probe].group + '" class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-12 groupheader"><h3>' + (lastgroup = probes[probe].group) + ' <small><a href="#" class="groupheader-toggle">Toggle all</a></small></h3></div>' : '') +
-					'<div style="background-image: url(\'/flags/' + probes[probe].unlocode.toLowerCase().replace(/^(..)(...)$/, '$1') + '.png\'); ' + (probes[probe].residential ? 'border-left: 10px solid #337ab7; padding-left: 32px; background-position: 5px;' : '') + '" class="col-xs-12 col-sm-6 col-md-6 col-lg-4 col-xl-3 cap_probe countryflag">' +
+					'<div style="' + (probes[probe].residential ? 'border-left: 5px solid #337ab7; padding-left: 10px; background-position: 5px;' : '') + '" class="col-xs-12 col-sm-6 col-md-6 col-lg-4 col-xl-3 cap_probe">' +
 						'<div style="float: left;">' +
+							'<img src="/flags/' + probes[probe].unlocode.toLowerCase().replace(/^(..)(...)$/, '$1') + '.png" style="cursor: pointer;" class="country-toggle"> ' + 
 							'<input id="probe_' + probe + '" data-residential="' + probes[probe].residential + '" data-group="' + probes[probe].group + '" data-unlocode="' + probes[probe].unlocode + '" data-country="' + probes[probe].country + '" data-city="' + probes[probe].city + '" data-provider="' + probes[probe].provider + '" data-asnumber="' + probes[probe].asnumber + '" ' + Object.keys(probes[probe].caps).map(function(cap){return 'data-cap'+cap+'="' + probes[probe].caps[cap] + '"';}).join(' ') + ' ' + (!probes[probe].status ? 'disabled ' : '') + 'data-toggle="probestoggle" data-on="' + probes[probe].unlocode.toUpperCase().replace(/^(..)(...)$/, '$1-$2') + '" data-off="' + probes[probe].unlocode.toUpperCase().replace(/^(..)(...)$/, '$1-$2') + '" type="checkbox" class="probe_checkbox"> ' +
 							probes[probe].city +
 						'</div>' +
@@ -91,12 +93,21 @@ jQuery(document).ready(function() {
 					'</div>'
 				);
 			}).join('') + (config.html.columned_probes && lastgroup !== null ? '</div>' : ''));
-			jQuery('input[type=checkbox][data-toggle^=probestoggle]').bootstrapToggle(toggleopts);
+			jQuery('input[type=checkbox][data-toggle=probestoggle]').bootstrapToggle(toggleopts);
+			jQuery('.country-toggle').click(function (e) {
+				e.preventDefault();
+				var country = jQuery(this).parent().children('div').children('input.probe_checkbox').data('country');
+				jQuery('input[type=checkbox][data-toggle=probestoggle][data-country="' + country + '"]').bootstrapToggle('on');
+			});
+			jQuery('.country-toggle').dblclick(function (e) {
+				e.preventDefault();
+				var country = jQuery(this).parent().children('div').children('input.probe_checkbox').data('country');
+				jQuery('input[type=checkbox][data-toggle=probestoggle][data-country!="' + country + '"]').bootstrapToggle('off');
+			});
 			jQuery('.groupheader-toggle').click(function (e) {
 				e.preventDefault();
-				xyz = jQuery(this);
 				var group = jQuery(this).parent().parent().parent().data('group');
-				jQuery('input[type=checkbox][data-toggle^=probestoggle][data-group="' + group + '"]').bootstrapToggle(jQuery('input[type=checkbox][data-toggle^=probestoggle][data-group="' + group + '"]:checked').length ? 'off' : 'on');
+				jQuery('input[type=checkbox][data-toggle=probestoggle][data-group="' + group + '"]').bootstrapToggle(jQuery('input[type=checkbox][data-toggle=probestoggle][data-group="' + group + '"]:checked').length ? 'off' : 'on');
 			});
 		});
 		jQuery.getJSON('/caps.json', function (caps) {
@@ -109,7 +120,7 @@ jQuery(document).ready(function() {
 					'</div>'
 				);
 			}));
-			jQuery('input[type=checkbox][data-toggle^=capstoggle]').bootstrapToggle(toggleopts);
+			jQuery('input[type=checkbox][data-toggle=capstoggle]').bootstrapToggle(toggleopts);
 		});
 	});
 	jQuery('form').on('submit', function (e) {
@@ -117,10 +128,10 @@ jQuery(document).ready(function() {
 		var target = jQuery('#target').val();
 		var probes = [];
 		var caps = [];
-		jQuery('input[type=checkbox][data-toggle^=probestoggle]:checked').bootstrapToggle(toggleopts).each(function () {
+		jQuery('input[type=checkbox][data-toggle=probestoggle]:checked').bootstrapToggle(toggleopts).each(function () {
 			probes.push(jQuery(this).attr('id').substr(6));
 		});
-		jQuery('input[type=checkbox][data-toggle^=capstoggle]:checked').bootstrapToggle(toggleopts).each(function () {
+		jQuery('input[type=checkbox][data-toggle=capstoggle]:checked').bootstrapToggle(toggleopts).each(function () {
 			caps.push(jQuery(this).attr('id').substr(4));
 		});
 		if (!probes.length) {

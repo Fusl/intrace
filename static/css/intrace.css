@@ -41,11 +41,6 @@ pre code {
 .query-header small {
 	font-family: Monospace;
 }
-.countryflag {
-	padding-left: 42px;
-	background-repeat: no-repeat;
-	background-position: 15px 2px;
-}
 .groupheader h3 {
 	margin-top: 10px;
 	margin-bottom: 5px;
