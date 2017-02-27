@@ -87,7 +87,7 @@ jQuery(document).ready(function() {
 							probes[probe].city +
 						'</div>' +
 						'<div style="float: right;">' +
-							'&nbsp;(' + probes[probe].provider + ' <a target="_blank" href="https://bgpview.io/asn/' + probes[probe].asnumber + '">AS' + probes[probe].asnumber + '</a>)' +
+							'&nbsp;(<a target="_blank" href="#" class="provider-toggle">' + probes[probe].provider + '</a> <a target="_blank" href="https://bgpview.io/asn/' + probes[probe].asnumber + '">AS' + probes[probe].asnumber + '</a>)' +
 						'</div>' +
 						'<div style="clear: both;"></div>' +
 					'</div>'
@@ -103,6 +103,16 @@ jQuery(document).ready(function() {
 				e.preventDefault();
 				var country = jQuery(this).parent().children('div').children('input.probe_checkbox').data('country');
 				jQuery('input[type=checkbox][data-toggle=probestoggle][data-country!="' + country + '"]').bootstrapToggle('off');
+			});
+			jQuery('.provider-toggle').click(function (e) {
+				e.preventDefault();
+				var provider = jQuery(this).parent().parent().children('div').first().children('div').children('input.probe_checkbox').data('provider');
+				jQuery('input[type=checkbox][data-toggle=probestoggle][data-provider="' + provider + '"]').bootstrapToggle('on');
+			});
+			jQuery('.provider-toggle').dblclick(function (e) {
+				e.preventDefault();
+				var provider = jQuery(this).parent().parent().children('div').first().children('div').children('input.probe_checkbox').data('provider');
+				jQuery('input[type=checkbox][data-toggle=probestoggle][data-provider!="' + provider + '"]').bootstrapToggle('off');
 			});
 			jQuery('.groupheader-toggle').click(function (e) {
 				e.preventDefault();
