@@ -1,2 +1,6 @@
 .gitignore
+config/caps.json
+config/private.json
+config/probes.json
+config/public.json
 node_modules
