@@ -191,6 +191,12 @@ require('./config/probes.json').forEach(function (host) {
 	hostcheck(probe);	
 });
 
+app.get('/ip', function (req, res) {
+	res.status(200);
+	res.setHeader('Content-Type', 'text/plain');
+	res.end(config.logs.use_x_forwarded_for ? req.headers['x-forwarded-for'] : req.socket.remoteAddress);
+});
+
 app.get('/config.json', function (req, res) {
 	res.status(200);
 	res.setHeader('Content-Type', 'application/json');
