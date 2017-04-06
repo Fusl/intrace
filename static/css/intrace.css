@@ -14,7 +14,7 @@ body {
 	   -moz-border-radius: 0 !important;
 	        border-radius: 0 !important;
 }
-.toggle.fvzlg, .toggle.fvzlg .toggle-handle {
+.toggle.intrace, .toggle.intrace .toggle-handle {
 	font-family: "Lucida Console", "Monaco", "Monospace", "monospace", "Courier New", "Courier";
 }
 .table-borderless td, .table-borderless th {
@@ -44,4 +44,10 @@ pre code {
 .groupheader h3 {
 	margin-top: 10px;
 	margin-bottom: 5px;
+	cursor: pointer;
+	color: #337ab7;
+}
+.groupheader h3:focus, .groupheader h3:hover {
+	color: #23527c;
+	text-decoration: underline;
 }

@@ -1,5 +1,11 @@
 jQuery(document).ready(function() {
 	jQuery('body').html('<a href="https://github.com/Fusl/intrace"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/52760788cde945287fbb584134c4cbc2bc36f904/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f77686974655f6666666666662e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_white_ffffff.png"></a><div class="container"><div class="row"><div class="col-xs-12"><div id="page-header" class="page-header"></div></div></div><div class="row row-margin"><div class="col-xs-12"><form><div class="input-group input-group-lg"><input type="text" class="form-control input-lg" id="target" placeholder="IP Address (e.g. ' + [Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256)].join('.') + ', ' + [Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256)].join('.') + ', ...)"><span class="input-group-btn"><button class="btn btn-primary btn-lg" id="runtest" type="submit">Run Test</button></span></div></form></div></div><div id="caps" class="row row-margin"></div><div id="probes" class="row row-margin"></div><div id="results" class="row"></div><div id="page-footer" class="footer"></div></div>');
+	jQuery.get('/ip', function (clientip) {
+		if (jQuery('#target').val() === '') {
+			jQuery('#target').val(clientip);
+			jQuery('#target').select();
+		}
+	});
 	jQuery('#target').focus();
 	capsmatch = {};
 	var datahandler = function (res, end) {
@@ -37,7 +43,7 @@ jQuery(document).ready(function() {
 		size: 'mini',
 		onstyle: 'primary',
 		offstyle: 'default',
-		style: 'fvzlg',
+		style: 'intrace',
 		width: 60
 	};
 	jQuery.getJSON('/config.json', function (config) {
@@ -74,12 +80,12 @@ jQuery(document).ready(function() {
 							probes[probe].city +
 						'</div>' +
 						'<div style="float: right;">' +
-							'&nbsp;(' + probes[probe].provider + ' <a target="_blank" href="https://bgpview.io/asn/' + probes[probe].asnumber + '">AS' + probes[probe].asnumber + '</a>)' +
+							'&nbsp;<a href="#" class="provider-toggle"><img src="/providerlogos/' + md5(probes[probe].provider) + '.png" alt="' + probes[probe].provider + '" title="' + probes[probe].provider + '" style="max-height: 16px; max-width: 16px;"></a> <a target="_blank" href="https://bgpview.io/asn/' + probes[probe].asnumber + '">AS' + probes[probe].asnumber + '</a>' +
 						'</div>' +
 						'<div style="clear: both;"></div>' +
 					'</div>'
 				) : (
-					(lastgroup !== probes[probe].group ? '<div data-group="' + probes[probe].group + '" class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-12 groupheader"><h3>' + (lastgroup = probes[probe].group) + ' <small><a href="#" class="groupheader-toggle">Toggle all</a></small></h3></div>' : '') +
+					(lastgroup !== probes[probe].group ? '<div data-group="' + probes[probe].group + '" class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-12 groupheader"><h3 class="groupheader-toggle">' + (lastgroup = probes[probe].group) + '</h3></div>' : '') +
 					'<div style="' + (probes[probe].residential ? 'border-left: 5px solid #337ab7; padding-left: 10px; background-position: 5px;' : '') + '" class="col-xs-12 col-sm-6 col-md-6 col-lg-4 col-xl-3 cap_probe">' +
 						'<div style="float: left;">' +
 							'<img src="/flags/' + probes[probe].unlocode.toLowerCase().replace(/^(..)(...)$/, '$1') + '.png" style="cursor: pointer;" class="country-toggle"> ' + 
@@ -87,7 +93,9 @@ jQuery(document).ready(function() {
 							probes[probe].city +
 						'</div>' +
 						'<div style="float: right;">' +
-							'&nbsp;(<a target="_blank" href="#" class="provider-toggle">' + probes[probe].provider + '</a> <a target="_blank" href="https://bgpview.io/asn/' + probes[probe].asnumber + '">AS' + probes[probe].asnumber + '</a>)' +
+							'&nbsp;<a href="#" class="provider-toggle">' + probes[probe].provider + '</a> ' +
+							'<a target="_blank" href="https://bgpview.io/asn/' + probes[probe].asnumber + '" style="font-size: 70%;">' + probes[probe].asnumber + '</a> ' +
+							'<a href="#" class="provider-toggle"><img src="/providerlogos/' + md5(probes[probe].provider) + '.png" alt="" title="' + probes[probe].provider + '" style="height: 16px; width: 16px;" onerror="this.onerror=null;this.src=\'/providerlogos/d41d8cd98f00b204e9800998ecf8427e.png\';" ></a>' +
 						'</div>' +
 						'<div style="clear: both;"></div>' +
 					'</div>'
@@ -116,7 +124,7 @@ jQuery(document).ready(function() {
 			});
 			jQuery('.groupheader-toggle').click(function (e) {
 				e.preventDefault();
-				var group = jQuery(this).parent().parent().parent().data('group');
+				var group = jQuery(this).parent().data('group');
 				jQuery('input[type=checkbox][data-toggle=probestoggle][data-group="' + group + '"]').bootstrapToggle(jQuery('input[type=checkbox][data-toggle=probestoggle][data-group="' + group + '"]:checked').length ? 'off' : 'on');
 			});
 		});
