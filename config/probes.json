@@ -7,6 +7,7 @@
 		"asnumber": 12345,
 		"host": "root@uslax.yourserver.tld",
 		"group": "North america",
+		"residential": false,
 		"caps": {
 			"bgp": 4,
 			"mtr": 6,
@@ -22,6 +23,7 @@
 		"asnumber": 23456,
 		"host": "root@atvie.somewhere.else",
 		"group": "Europe",
+		"residential": true,
 		"caps": {
 			"bgp": 6,
 			"mtr": false,
