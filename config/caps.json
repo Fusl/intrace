@@ -14,8 +14,8 @@
 	"trace": {
 		"name": "Traceroute",
 		"highlight": 1,
-		"cmd4": "traceroute -q5 -w 2 -4 -m 50 {{TARGET}} 2> /dev/null",
-		"cmd6": "traceroute -q5 -w 2 -6 -m 50 {{TARGET}} 2> /dev/null"
+		"cmd4": "traceroute -A -q5 -w 2 -4 -m 50 {{TARGET}} 2> /dev/null",
+		"cmd6": "traceroute -A -q5 -w 2 -6 -m 50 {{TARGET}} 2> /dev/null"
 	},
 	"ping": {
 		"name": "Ping",
