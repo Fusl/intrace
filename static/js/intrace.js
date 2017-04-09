@@ -8,6 +8,22 @@ jQuery(document).ready(function() {
 	});
 	jQuery('#target').focus();
 	capsmatch = {};
+	var progressupdate = function (id) {
+		if (!jQuery('#query_' + id + '_progress_bar').length) {
+			return;
+		}
+		var progress = Number(jQuery('#query_' + id + '_progress_bar').data('progress'));
+		if (isNaN(progress)) {
+			progress = 0;
+		}
+		progress += (100 - progress) / 100;
+		console.log(progress);
+		jQuery('#query_' + id + '_progress_bar').data('progress', progress);
+		jQuery('#query_' + id + '_progress_bar').css({width: progress + '%'});
+		setTimeout(function () {
+			progressupdate(id);
+		}, 200);
+	};
 	var datahandler = function (res, end) {
 		if (res.data) {
 			jQuery('#query_' + res.id).append(res.data.replace(/\r/g, ''));
@@ -22,7 +38,14 @@ jQuery(document).ready(function() {
 				}
 			}
 			jQuery('#query_' + res.id + '_small').text(slimtext.join(' '));
+			jQuery('#query_' + res.id + '_progress').remove();
+			if (jQuery('#query_' + res.id).text() === '') {
+				jQuery('#query_' + res.id).append('Command produced no output');
+			}
 		} else {
+			if (jQuery('#query_' + res.id + '_progress_bar').data('progress') === '') {
+				progressupdate(res.id);
+			}
 			jQuery('#query_' + res.id + '_small').text(jQuery('#query_' + res.id).text().split('\n').map(function(line){return line.trim();}).filter(function(line){return line!=='';}).reverse().slice(0, 1));
 		}
 	};
@@ -184,8 +207,9 @@ jQuery(document).ready(function() {
 								'<h3 class="panel-title query-header">' + target + ' | ' + jQuery('#cap_' + cap).data('name') + ' from ' + jQuery('#probe_' + probe).data('provider') + ' AS' + jQuery('#probe_' + probe).data('asnumber') + ' in ' + jQuery('#probe_' + probe).data('country') + ', ' + jQuery('#probe_' + probe).data('city') + ' <small id="query_' + id + '_small"></small></h3>' +
 							'</div>' +
 							'<div class="panel-body">' +
+								'<div id="query_' + id + '_progress" class="progress" style="margin-bottom: 0;"><div id="query_' + id + '_progress_bar" class="progress-bar progress-bar-striped active" role="progressbar" style="width: 100%" data-progress=""></div></div>' +
 								'<pre>' +
-									'<code id="query_' + id + '"></code>' +
+									'<div id="query_' + id + '_container"><code id="query_' + id + '"></code></div>' +
 								'</pre>' +
 							'</div>' +
 						'</div>' +
@@ -205,7 +229,7 @@ jQuery(document).ready(function() {
 		}
 		jQuery('#target').blur();
 		jQuery('#runtest').blur();
-		jQuery(this)[0].reset();
+		// jQuery(this)[0].reset();
 		jQuery.scrollTo('#results', {duration: 250});
 	});
 });
