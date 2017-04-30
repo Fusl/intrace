@@ -36,7 +36,7 @@ pre code {
 }
 .query-header {
 	white-space: nowrap;
-	overflow-x: hidden;
+	overflow: hidden;
 }
 .query-header small {
 	font-family: Monospace;
@@ -50,4 +50,43 @@ pre code {
 .groupheader h3:focus, .groupheader h3:hover {
 	color: #23527c;
 	text-decoration: underline;
+}
+.github-fork-ribbon::before {
+	background-color: #265a88;
+}
+.clear_both {
+	clear: both;
+}
+.clear_left {
+	clear: left;
+}
+.clear_right {
+	clear: right;
+}
+.float_left {
+	float: left;
+}
+.float_right {
+	float: right;
+}
+.residential {
+	border-left: 5px solid #337ab7;
+	padding-left: 10px;
+	background-position: 5px;
+}
+.country-toggle {
+	cursor: pointer;
+}
+.progress {
+	margin-bottom: 0;
+}
+.provider-toggle img {
+	height: 16px;
+	width: 16px;
+}
+.asn {
+	font-size: 70%;
+}
+.progress-bar {
+	width: 100%;
 }

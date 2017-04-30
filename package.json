@@ -21,7 +21,9 @@
     "ipaddr.js": "*",
     "md5": "*",
     "express": "*",
-    "socket.io": "*"
+    "socket.io": "*",
+    "bases": "*",
+    "crc-32": "*"
   },
   "keywords": [
     "looking",

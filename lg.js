@@ -4,12 +4,13 @@
 
 var async         = require('async');
 var ipaddrjs      = require('ipaddr.js');
-var md5           = require('md5');
 var fs            = require('fs');
 var child_process = require('child_process');
 var http          = require('http');
 var express       = require('express');
 var socketio      = require('socket.io');
+var crc32         = require('crc-32');
+var bases         = require('bases');
 
 var app = express();
 var server = http.createServer(app);
@@ -21,6 +22,10 @@ var is_bogon_v6 = require('./libs/is_bogon_v6.js');
 var config = require('./config/private.json');
 var public_config = require('./config/public.json');
 var caps = require('./config/caps.json');
+
+var hash = function (string) {
+	return ('000' + bases.toBase62(Math.abs(crc32.str(string)) % 14776336)).substr(-4);
+};
 
 var cvalidator = {
 	object: function (str) { return str && typeof str === 'object' && str instanceof Object;                       },
@@ -67,7 +72,7 @@ var setstatus = function (probe, status) {
 	}
 	if (probes[probe].status !== status) {
 		if (config.logs.status) {
-			console.log(new Date(), probe, probes[probe].host, probes[probe].status, '->', status);
+			console.log([new Date(), probe, probes[probe].unlocode, probes[probe].host, probes[probe].status, '->', status].map(function(val){if(val === null) { return 'null'; }; return val.toString('utf8');}).join(' '));
 		}
 		probes[probe].status = status;
 	}
@@ -158,6 +163,9 @@ var execqueue = async.queue(function (task, callback) {
 	if (task.resock.socket.destroyed) {
 		return callback();
 	}
+	if (probes[task.probe].queue.length() >= probes[task.probe].queue.concurrency * 10) {
+		return task.resock.status(503) + task.resock.end('503 Service Unavailable') + callback();
+	}
 	probes[task.probe].queue.push(task, callback);
 }, config.queue.global);
 
@@ -170,7 +178,7 @@ require('./config/probes.json').forEach(function (host) {
 	cvalid('probes.json->*->host->host',     host.host,     'text');
 	cvalid('probes.json->*->host->group',    host.group,    'text');
 	cvalid('probes.json->*->host->caps',     host.caps,     'object');
-	var probe = md5([
+	var probe = hash([
 		config.probe_id_hash,
 		host.country,
 		host.city,
@@ -189,6 +197,55 @@ require('./config/probes.json').forEach(function (host) {
 	}, config.queue.probe);
 	probes[probe] = host;
 	hostcheck(probe);	
+});
+
+app.use(function(req, res, next) {
+	var headers = {
+		'Content-Security-Policy': [
+			"default-src 'none'",
+			"script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/",
+			"object-src 'none'",
+			"style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/",
+			"img-src 'self'",
+			"media-src 'none'",
+			"frame-src 'none'",
+			"frame-ancestors 'none'",
+			"font-src 'none'",
+			"connect-src 'self' wss://" + req.headers.host || ''
+		].join('; '),
+		'X-Content-Security-Policy': [
+			"default-src 'none'",
+			"script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/",
+			"object-src 'none'",
+			"style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/",
+			"img-src 'self'",
+			"media-src 'none'",
+			"frame-src 'none'",
+			"frame-ancestors 'none'",
+			"font-src 'none'",
+			"connect-src 'self' wss://" + req.headers.host || ''
+		].join('; '),
+		'X-WebKit-CSP': [
+			"default-src 'none'",
+			"script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/",
+			"object-src 'none'",
+			"style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/",
+			"img-src 'self'",
+			"media-src 'none'",
+			"frame-src 'none'",
+			"frame-ancestors 'none'",
+			"font-src 'none'",
+			"connect-src 'self' wss://" + req.headers.host || ''
+		].join('; '),
+		'Strict-Transport-Security': 'max-age=31536000',
+		'X-XSS-Protection': '1; mode=block',
+		'X-Frame-Options': 'SAMEORIGIN',
+		'Referrer-Policy': 'no-referrer'
+	};
+	Object.keys(headers).forEach(function (header_key) {
+		res.setHeader(header_key, headers[header_key]);
+	});
+	return next();
 });
 
 app.get('/ip', function (req, res) {
@@ -229,7 +286,8 @@ app.get('/caps.json', function (req, res) {
 	res.end(JSON.stringify(caps));
 });
 
-app.get(/^\/([a-z0-9]{32})\/([a-z]+)\/([0-9a-f:\.]{1,39})$/, function (req, res) {
+app.get(/^\/([a-zA-Z0-9]{4})\/([a-z]+)\/([0-9a-f:\.]{1,39})$/, function (req, res) {
+	res.setHeader('Content-Type', 'text/plain');
 	var query = {
 		probe: req.params[0],
 		type: req.params[1],
@@ -247,8 +305,7 @@ app.get(/^\/([a-z0-9]{32})\/([a-z]+)\/([0-9a-f:\.]{1,39})$/, function (req, res)
 		!probes[query.probe].status ||
 		!caps[query.type]
 	) {
-		res.status(404);
-		return res.end('404 Not Found');
+		return res.status(404) + res.end('404 Not Found');
 	}
 	var proto = ipaddrjs.IPv4.isValidFourPartDecimal(query.target) ? 4 : ipaddrjs.IPv6.isValid(query.target) ? 6 : null;
 	if (
@@ -260,11 +317,11 @@ app.get(/^\/([a-z0-9]{32})\/([a-z]+)\/([0-9a-f:\.]{1,39})$/, function (req, res)
 			probes[query.probe].caps[query.type] === Number(proto)
 		)
 	) {
-		res.status(404);
-		return res.end('404 Not Found');
+		return res.status(404) + res.end('404 Not Found');
 	}
-	res.status(200);
-	res.setHeader('Content-Type', 'text/plain');
+	if (execqueue.length() >= execqueue.concurrency * 10) {
+		return res.status(503) + res.end('503 Service Unavailable');
+	}
 	execqueue.push({
 		resock: res,
 		probe: query.probe,
@@ -331,8 +388,12 @@ io.on('connection', function(socket) {
 				}
 				socket.emit('end', {query: query, id: query.id, data: chunk ? chunk.toString('utf8') : null});
 			},
+			status: new Function(),
 			socket: resock_socket
 		};
+		if (queue.length() >= queue.concurrency * 10) {
+			return resock.end('503 Service Unavailable');
+		}
 		queue.push({
 			resock: resock,
 			probe: query.probe,

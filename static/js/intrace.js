@@ -1,13 +1,53 @@
 jQuery(document).ready(function() {
-	jQuery('body').html('<a href="https://github.com/Fusl/intrace"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/52760788cde945287fbb584134c4cbc2bc36f904/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f77686974655f6666666666662e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_white_ffffff.png"></a><div class="container"><div class="row"><div class="col-xs-12"><div id="page-header" class="page-header"></div></div></div><div class="row row-margin"><div class="col-xs-12"><form><div class="input-group input-group-lg"><input type="text" class="form-control input-lg" id="target" placeholder="IP Address (e.g. ' + [Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256)].join('.') + ', ' + [Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256)].join('.') + ', ...)"><span class="input-group-btn"><button class="btn btn-primary btn-lg" id="runtest" type="submit">Run Test</button></span></div></form></div></div><div id="caps" class="row row-margin"></div><div id="probes" class="row row-margin"></div><div id="results" class="row"></div><div id="page-footer" class="footer"></div></div>');
-	jQuery.get('/ip', function (clientip) {
-		if (jQuery('#target').val() === '') {
-			jQuery('#target').val(clientip);
-			jQuery('#target').select();
-		}
-	});
+	jQuery('body').html('<a class="github-fork-ribbon" href="//github.com/Fusl/intrace" title="Fork me on GitHub">Fork me on GitHub</a><div class="container"><div class="row"><div class="col-xs-12"><div id="page-header" class="page-header"></div></div></div><div class="row row-margin"><div class="col-xs-12"><form><div class="input-group input-group-lg"><input type="text" class="form-control input-lg" id="target" placeholder="IP Address (e.g. ' + [Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256)].join('.') + ', ' + [Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256)].join('.') + ', ...)"><span class="input-group-btn"><button class="btn btn-primary btn-lg" id="runtest" type="submit">Run Test</button></span></div></form></div></div><div id="caps" class="row row-margin"></div><div id="probes" class="row row-margin"></div><div id="results" class="row"></div><div id="page-footer" class="footer"></div></div>');
 	jQuery('#target').focus();
-	capsmatch = {};
+	var capsmatch = {};
+	var seturlhash = function() {
+		var probes = [];
+		var caps = [];
+		var target = jQuery('#target').val();
+		jQuery('input[type=checkbox][data-toggle=probestoggle]:checked').bootstrapToggle(toggleopts).each(function () {
+			probes.push(jQuery(this).attr('id').substr(6));
+		});
+		jQuery('input[type=checkbox][data-toggle=capstoggle]:checked').bootstrapToggle(toggleopts).each(function () {
+			caps.push(jQuery(this).attr('id').substr(4));
+		});
+		location.hash = '#' + (caps.join(',')) + '/' + (probes.join(',')) + '/' + target;
+	};
+	var geturlhash = function () {
+		return parseurlhash(location.hash);
+	};
+	var parseurlhash = function (hash) {
+		var hashdata = {
+			caps: [],
+			probes: [],
+			target: null
+		};
+		if (hash[0] !== '#') {
+			return hashdata;
+		}
+		hash = hash.substr(1).split('/');
+		if (hash.length !== 3) {
+			return hashdata;
+		}
+		hashdata.caps = hash[0].split(',');
+		hashdata.probes = hash[1].split(',');
+		hashdata.target = hash[2];
+		return hashdata;
+	};
+	var urlhash = geturlhash();
+	if (urlhash.target) {
+		if (jQuery('#target').val() === '') {
+			jQuery('#target').val(urlhash.target);
+		}
+	} else {
+		jQuery.get('/ip', function (clientip) {
+			if (jQuery('#target').val() === '') {
+				jQuery('#target').val(clientip);
+				jQuery('#target').select();
+			}
+		});
+	}
 	var progressupdate = function (id) {
 		if (!jQuery('#query_' + id + '_progress_bar').length) {
 			return;
@@ -60,8 +100,6 @@ jQuery(document).ready(function() {
 	socket.on('end', function (res) {
 		datahandler(res, true);
 	});
-	var probes = null;
-	var caps = null;
 	var toggleopts = {
 		size: 'mini',
 		onstyle: 'primary',
@@ -73,96 +111,92 @@ jQuery(document).ready(function() {
 		jQuery('#page-header').html(config.html.header);
 		jQuery('#page-footer').html(config.html.footer);
 		jQuery('title').text(config.html.title);
-		jQuery.getJSON('/probes.json', function (probes) {
-			var lastgroup = null;
-			var groups = {};
-			Object.keys(probes).forEach(function (probe) {
-				groups[probes[probe].group] = !groups[probes[probe].group] ? 1 : groups[probes[probe].group] + 1;
-			});
-			jQuery('#probes').html(Object.keys(probes).sort(function (a, b) {
-				return (
-					groups[probes[a].group] > groups[probes[b].group] ?  1 :
-					groups[probes[a].group] < groups[probes[b].group] ? -1 :
-					probes[a].group         > probes[b].group         ?  1 :
-					probes[a].group         < probes[b].group         ? -1 :
-					probes[a].unlocode      > probes[b].unlocode      ?  1 :
-					probes[a].unlocode      < probes[b].unlocode      ? -1 :
-					probes[a].provider      > probes[b].provider      ?  1 :
-					probes[a].provider      < probes[b].provider      ? -1 :
-					0
-				);
-			}).map(function (probe) {
-				var newgroup = false;
-				return config.html.columned_probes ? (
-					(lastgroup !== null && lastgroup !== probes[probe].group ? '</div>' : '') +
-					(lastgroup !== probes[probe].group ? '<div class="col-xs-12 col-sm-6 col-md-6 col-lg-4 col-xl-3"><div data-group="' + probes[probe].group + '"><h3>' + (lastgroup = probes[probe].group) + ' <small><a href="#" class="groupheader-toggle">Toggle all</a></small></h3></div>' : '') +
-					'<div style="' + (probes[probe].residential ? 'border-left: 5px solid #337ab7; padding-left: 10px; background-position: 5px;' : '') + '" class="cap_probe">' +
-						'<div style="float: left;">' +
-							'<img src="/flags/' + probes[probe].unlocode.toLowerCase().replace(/^(..)(...)$/, '$1') + '.png" style="cursor: pointer;" class="country-toggle"> ' +
-							'<input id="probe_' + probe + '" data-residential="' + probes[probe].residential + '" data-group="' + probes[probe].group + '" data-unlocode="' + probes[probe].unlocode + '" data-country="' + probes[probe].country + '" data-city="' + probes[probe].city + '" data-provider="' + probes[probe].provider + '" data-asnumber="' + probes[probe].asnumber + '" ' + Object.keys(probes[probe].caps).map(function(cap){return 'data-cap'+cap+'="' + probes[probe].caps[cap] + '"';}).join(' ') + ' ' + (!probes[probe].status ? 'disabled ' : '') + 'data-toggle="probestoggle" data-on="' + probes[probe].unlocode.toUpperCase().replace(/^(..)(...)$/, '$1-$2') + '" data-off="' + probes[probe].unlocode.toUpperCase().replace(/^(..)(...)$/, '$1-$2') + '" type="checkbox" class="probe_checkbox"> ' +
-							probes[probe].city +
-						'</div>' +
-						'<div style="float: right;">' +
-							'&nbsp;<a href="#" class="provider-toggle"><img src="/providerlogos/' + md5(probes[probe].provider) + '.png" alt="' + probes[probe].provider + '" title="' + probes[probe].provider + '" style="max-height: 16px; max-width: 16px;"></a> <a target="_blank" href="https://bgpview.io/asn/' + probes[probe].asnumber + '">AS' + probes[probe].asnumber + '</a>' +
-						'</div>' +
-						'<div style="clear: both;"></div>' +
-					'</div>'
-				) : (
-					(lastgroup !== probes[probe].group ? '<div data-group="' + probes[probe].group + '" class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-12 groupheader"><h3 class="groupheader-toggle">' + (lastgroup = probes[probe].group) + '</h3></div>' : '') +
-					'<div style="' + (probes[probe].residential ? 'border-left: 5px solid #337ab7; padding-left: 10px; background-position: 5px;' : '') + '" class="col-xs-12 col-sm-6 col-md-6 col-lg-4 col-xl-3 cap_probe">' +
-						'<div style="float: left;">' +
-							'<img src="/flags/' + probes[probe].unlocode.toLowerCase().replace(/^(..)(...)$/, '$1') + '.png" style="cursor: pointer;" class="country-toggle"> ' + 
-							'<input id="probe_' + probe + '" data-residential="' + probes[probe].residential + '" data-group="' + probes[probe].group + '" data-unlocode="' + probes[probe].unlocode + '" data-country="' + probes[probe].country + '" data-city="' + probes[probe].city + '" data-provider="' + probes[probe].provider + '" data-asnumber="' + probes[probe].asnumber + '" ' + Object.keys(probes[probe].caps).map(function(cap){return 'data-cap'+cap+'="' + probes[probe].caps[cap] + '"';}).join(' ') + ' ' + (!probes[probe].status ? 'disabled ' : '') + 'data-toggle="probestoggle" data-on="' + probes[probe].unlocode.toUpperCase().replace(/^(..)(...)$/, '$1-$2') + '" data-off="' + probes[probe].unlocode.toUpperCase().replace(/^(..)(...)$/, '$1-$2') + '" type="checkbox" class="probe_checkbox"> ' +
-							probes[probe].city +
-						'</div>' +
-						'<div style="float: right;">' +
-							'&nbsp;<a href="#" class="provider-toggle">' + probes[probe].provider + '</a> ' +
-							'<a target="_blank" href="https://bgpview.io/asn/' + probes[probe].asnumber + '" style="font-size: 70%;">' + probes[probe].asnumber + '</a> ' +
-							'<a href="#" class="provider-toggle"><img src="/providerlogos/' + md5(probes[probe].provider) + '.png" alt="" title="' + probes[probe].provider + '" style="height: 16px; width: 16px;" onerror="this.onerror=null;this.src=\'/providerlogos/d41d8cd98f00b204e9800998ecf8427e.png\';" ></a>' +
-						'</div>' +
-						'<div style="clear: both;"></div>' +
-					'</div>'
-				);
-			}).join('') + (config.html.columned_probes && lastgroup !== null ? '</div>' : ''));
-			jQuery('input[type=checkbox][data-toggle=probestoggle]').bootstrapToggle(toggleopts);
-			jQuery('.country-toggle').click(function (e) {
-				e.preventDefault();
-				var country = jQuery(this).parent().children('div').children('input.probe_checkbox').data('country');
-				jQuery('input[type=checkbox][data-toggle=probestoggle][data-country="' + country + '"]').bootstrapToggle('on');
-			});
-			jQuery('.country-toggle').dblclick(function (e) {
-				e.preventDefault();
-				var country = jQuery(this).parent().children('div').children('input.probe_checkbox').data('country');
-				jQuery('input[type=checkbox][data-toggle=probestoggle][data-country!="' + country + '"]').bootstrapToggle('off');
-			});
-			jQuery('.provider-toggle').click(function (e) {
-				e.preventDefault();
-				var provider = jQuery(this).parent().parent().children('div').first().children('div').children('input.probe_checkbox').data('provider');
-				jQuery('input[type=checkbox][data-toggle=probestoggle][data-provider="' + provider + '"]').bootstrapToggle('on');
-			});
-			jQuery('.provider-toggle').dblclick(function (e) {
-				e.preventDefault();
-				var provider = jQuery(this).parent().parent().children('div').first().children('div').children('input.probe_checkbox').data('provider');
-				jQuery('input[type=checkbox][data-toggle=probestoggle][data-provider!="' + provider + '"]').bootstrapToggle('off');
-			});
-			jQuery('.groupheader-toggle').click(function (e) {
-				e.preventDefault();
-				var group = jQuery(this).parent().data('group');
-				jQuery('input[type=checkbox][data-toggle=probestoggle][data-group="' + group + '"]').bootstrapToggle(jQuery('input[type=checkbox][data-toggle=probestoggle][data-group="' + group + '"]:checked').length ? 'off' : 'on');
-			});
+	});
+	jQuery.getJSON('/probes.json', function (probes) {
+		var lastgroup = null;
+		var groups = {};
+		Object.keys(probes).forEach(function (probe) {
+			groups[probes[probe].group] = !groups[probes[probe].group] ? 1 : groups[probes[probe].group] + 1;
 		});
-		jQuery.getJSON('/caps.json', function (caps) {
-			jQuery('#caps').html(Object.keys(caps).map(function (cap) {
-				capsmatch[cap] = caps[cap].highlight;
-				return (
-					'<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 cap_probe">' +
-						'<input id="cap_' + cap + '" data-name="' + caps[cap].name + '" data-toggle="capstoggle" data-on="' + cap + '" data-off="' + cap + '" type="checkbox" class="cap_checkbox"> ' +
-						caps[cap].name +
-					'</div>'
-				);
-			}));
-			jQuery('input[type=checkbox][data-toggle=capstoggle]').bootstrapToggle(toggleopts);
+		jQuery('#probes').html(Object.keys(probes).sort(function (a, b) {
+			return (
+				groups[probes[a].group] > groups[probes[b].group] ?  1 :
+				groups[probes[a].group] < groups[probes[b].group] ? -1 :
+				probes[a].group         > probes[b].group         ?  1 :
+				probes[a].group         < probes[b].group         ? -1 :
+				probes[a].unlocode      > probes[b].unlocode      ?  1 :
+				probes[a].unlocode      < probes[b].unlocode      ? -1 :
+				probes[a].provider      > probes[b].provider      ?  1 :
+				probes[a].provider      < probes[b].provider      ? -1 :
+				0
+			);
+		}).map(function (probe) {
+			var newgroup = false;
+			return (
+				(lastgroup !== probes[probe].group ? '<div data-group="' + probes[probe].group + '" class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-12 groupheader"><h3 class="groupheader-toggle">' + (lastgroup = probes[probe].group) + '</h3></div>' : '') +
+				'<div class="col-xs-12 col-sm-6 col-md-6 col-lg-4 col-xl-3 cap_probe' + (probes[probe].residential ? ' residential' : '') + '">' +
+					'<div class="float_left">' +
+						'<img src="/flags/' + probes[probe].unlocode.toLowerCase().replace(/^(..)(...)$/, '$1') + '.png" class="country-toggle"> ' + 
+						'<input id="probe_' + probe + '" data-residential="' + probes[probe].residential + '" data-group="' + probes[probe].group + '" data-unlocode="' + probes[probe].unlocode + '" data-country="' + probes[probe].country + '" data-city="' + probes[probe].city + '" data-provider="' + probes[probe].provider + '" data-asnumber="' + probes[probe].asnumber + '" ' + Object.keys(probes[probe].caps).map(function(cap){return 'data-cap'+cap+'="' + probes[probe].caps[cap] + '"';}).join(' ') + ' ' + (!probes[probe].status ? 'disabled ' : '') + 'data-toggle="probestoggle" data-on="' + probes[probe].unlocode.toUpperCase().replace(/^(..)(...)$/, '$1-$2') + '" data-off="' + probes[probe].unlocode.toUpperCase().replace(/^(..)(...)$/, '$1-$2') + '" type="checkbox" class="probe_checkbox"> ' +
+						probes[probe].city +
+					'</div>' +
+					'<div class="float_right">' +
+						'&nbsp;<a href="#" class="provider-toggle">' + probes[probe].provider + '</a> ' +
+						'<a target="_blank" href="https://bgpview.io/asn/' + probes[probe].asnumber + '" class="asn">' + probes[probe].asnumber + '</a> ' +
+						'<a href="#" class="provider-toggle"><img src="/providerlogos/' + md5(probes[probe].provider) + '.png" alt="" title="' + probes[probe].provider + '" onerror="this.onerror=null;this.src=\'/providerlogos/d41d8cd98f00b204e9800998ecf8427e.png\';" ></a>' +
+					'</div>' +
+					'<div class="clear_both"></div>' +
+				'</div>'
+			);
+		}).join(''));
+		jQuery('input[type=checkbox][data-toggle=probestoggle]').bootstrapToggle(toggleopts);
+		jQuery('.country-toggle').click(function (e) {
+			e.preventDefault();
+			var country = jQuery(this).parent().children('div').children('input.probe_checkbox').data('country');
+			jQuery('input[type=checkbox][data-toggle=probestoggle][data-country="' + country + '"]').bootstrapToggle('on');
 		});
+		jQuery('.country-toggle').dblclick(function (e) {
+			e.preventDefault();
+			var country = jQuery(this).parent().children('div').children('input.probe_checkbox').data('country');
+			jQuery('input[type=checkbox][data-toggle=probestoggle][data-country!="' + country + '"]').bootstrapToggle('off');
+		});
+		jQuery('.provider-toggle').click(function (e) {
+			e.preventDefault();
+			var provider = jQuery(this).parent().parent().children('div').first().children('div').children('input.probe_checkbox').data('provider');
+			jQuery('input[type=checkbox][data-toggle=probestoggle][data-provider="' + provider + '"]').bootstrapToggle('on');
+		});
+		jQuery('.provider-toggle').dblclick(function (e) {
+			e.preventDefault();
+			var provider = jQuery(this).parent().parent().children('div').first().children('div').children('input.probe_checkbox').data('provider');
+			jQuery('input[type=checkbox][data-toggle=probestoggle][data-provider!="' + provider + '"]').bootstrapToggle('off');
+		});
+		jQuery('.groupheader-toggle').click(function (e) {
+			e.preventDefault();
+			var group = jQuery(this).parent().data('group');
+			jQuery('input[type=checkbox][data-toggle=probestoggle][data-group="' + group + '"]').bootstrapToggle(jQuery('input[type=checkbox][data-toggle=probestoggle][data-group="' + group + '"]:checked').length ? 'off' : 'on');
+		});
+		if (urlhash.probes) {
+			urlhash.probes.forEach(function (probe) {
+				jQuery('#probe_' + probe).bootstrapToggle('on');
+			});
+		}
+	});
+	jQuery.getJSON('/caps.json', function (caps) {
+		jQuery('#caps').html(Object.keys(caps).map(function (cap) {
+			capsmatch[cap] = caps[cap].highlight;
+			return (
+				'<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 cap_probe">' +
+					'<input id="cap_' + cap + '" data-name="' + caps[cap].name + '" data-toggle="capstoggle" data-on="' + cap + '" data-off="' + cap + '" type="checkbox" class="cap_checkbox"> ' +
+					caps[cap].name +
+				'</div>'
+			);
+		}));
+		jQuery('input[type=checkbox][data-toggle=capstoggle]').bootstrapToggle(toggleopts);
+		if (urlhash.caps) {
+			urlhash.caps.forEach(function (cap) {
+				jQuery('#cap_' + cap).bootstrapToggle('on');
+			});
+		}
 	});
 	jQuery('form').on('submit', function (e) {
 		e.preventDefault();
@@ -207,7 +241,7 @@ jQuery(document).ready(function() {
 								'<h3 class="panel-title query-header">' + target + ' | ' + jQuery('#cap_' + cap).data('name') + ' from ' + jQuery('#probe_' + probe).data('provider') + ' AS' + jQuery('#probe_' + probe).data('asnumber') + ' in ' + jQuery('#probe_' + probe).data('country') + ', ' + jQuery('#probe_' + probe).data('city') + ' <small id="query_' + id + '_small"></small></h3>' +
 							'</div>' +
 							'<div class="panel-body">' +
-								'<div id="query_' + id + '_progress" class="progress" style="margin-bottom: 0;"><div id="query_' + id + '_progress_bar" class="progress-bar progress-bar-striped active" role="progressbar" style="width: 100%" data-progress=""></div></div>' +
+								'<div id="query_' + id + '_progress" class="progress"><div id="query_' + id + '_progress_bar" class="progress-bar progress-bar-striped active" role="progressbar" data-progress=""></div></div>' +
 								'<pre>' +
 									'<div id="query_' + id + '_container"><code id="query_' + id + '"></code></div>' +
 								'</pre>' +
@@ -231,5 +265,6 @@ jQuery(document).ready(function() {
 		jQuery('#runtest').blur();
 		// jQuery(this)[0].reset();
 		jQuery.scrollTo('#results', {duration: 250});
+		seturlhash();
 	});
 });
