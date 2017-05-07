@@ -4,7 +4,6 @@
 
 var async         = require('async');
 var ipaddrjs      = require('ipaddr.js');
-var fs            = require('fs');
 var child_process = require('child_process');
 var http          = require('http');
 var express       = require('express');
@@ -90,7 +89,7 @@ var hostcheck = function (probe) {
 	]));
 	proc.stdout.resume();
 	proc.stderr.resume();
-	proc.once('exit', function (code, signal) {
+	proc.once('exit', function (code) {
 		setstatus(probe, code === 0);
 		setTimeout(function () {
 			hostcheck(probe);
@@ -187,7 +186,7 @@ require('./config/probes.json').forEach(function (host) {
 		host.asnumber,
 		host.host,
 		host.group
-	].join('\0'));
+	].join('\u0000'));
 	host.status = null;
 	host.queue = async.queue(function (task, callback) {
 		if (task.resock.socket.destroyed) {
@@ -286,7 +285,7 @@ app.get('/caps.json', function (req, res) {
 	res.end(JSON.stringify(caps));
 });
 
-app.get(/^\/([a-zA-Z0-9]{4})\/([a-z]+)\/([0-9a-f:\.]{1,39})$/, function (req, res) {
+app.get(/^\/([a-zA-Z0-9]{4})\/([a-z]+)\/([0-9a-f:\\.]{1,39})$/, function (req, res) {
 	res.setHeader('Content-Type', 'text/plain');
 	var query = {
 		probe: req.params[0],
@@ -325,7 +324,7 @@ app.get(/^\/([a-zA-Z0-9]{4})\/([a-z]+)\/([0-9a-f:\.]{1,39})$/, function (req, re
 	execqueue.push({
 		resock: res,
 		probe: query.probe,
-		command: (caps[query.type]['cmd' + proto] ? caps[query.type]['cmd' + proto] : caps[query.type]['cmd'] ? caps[query.type]['cmd'] : 'echo unsupported').replace(/{{TARGET}}/g, query.target).replace(/{{PROTO}}/g, proto)
+		command: (caps[query.type]['cmd' + proto] || caps[query.type]['cmd'] || 'echo unsupported').replace(/\{\{TARGET\}\}/g, query.target).replace(/\{\{PROTO\}\}/g, proto)
 	});	
 	if (config.logs.requests && config.logs.requests.http) {
 		console.log(new Date(), 'enqueue-http', 'remote=' + (config.logs.use_x_forwarded_for ? req.headers['x-forwarded-for'] : req.socket.remoteAddress), 'type=' + query.type, 'probe=' + query.probe, 'target=' + query.target);
@@ -397,7 +396,7 @@ io.on('connection', function(socket) {
 		queue.push({
 			resock: resock,
 			probe: query.probe,
-			command: (caps[query.type]['cmd' + proto] ? caps[query.type]['cmd' + proto] : caps[query.type]['cmd'] ? caps[query.type]['cmd'] : 'echo unsupported').replace(/{{TARGET}}/g, query.target).replace(/{{PROTO}}/g, proto)
+			command: (caps[query.type]['cmd' + proto] || caps[query.type]['cmd'] || 'echo unsupported').replace(/\{\{TARGET\}\}/g, query.target).replace(/\{\{PROTO\}\}/g, proto)
 		});
 		if (config.logs.requests && config.logs.requests.websocket) {
 			console.log(new Date(), 'enqueue-websocket', 'remote=' + (config.logs.use_x_forwarded_for ? socket.client.request.headers['x-forwarded-for'] : socket.request.connection.remoteAddress), 'type=' + query.type, 'probe=' + query.probe, 'target=' + query.target);
