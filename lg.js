@@ -60,6 +60,7 @@ cvalid('private.json->logs->requests->websocket', config.logs.requests.websocket
 cvalid('private.json->logs->use_x_forwarded_for', config.logs.use_x_forwarded_for, 'bool'  );
 cvalid('private.json->http',                      config.http,                     'object');
 cvalid('private.json->http->port',                config.http.port,                'uint'  );
+cvalid('private.json->logs->debug',               config.logs.debug,               'bool'  );
 
 var shutdown = false;
 
@@ -95,6 +96,14 @@ var hostcheck = function (probe) {
 			hostcheck(probe);
 		}, 5000);
 	});
+	if (config.logs.debug) {
+		proc.stdout.on('data', function (chunk) {
+			console.log('Probe ' + probe + ' stdout:', chunk.toString('utf8'));
+		});
+		proc.stderr.on('data', function (chunk) {
+			console.log('Probe ' + probe + ' stderr:', chunk.toString('utf8'));
+		});
+	}
 };
 
 var hostexec = function (probe, command, resock, done) {

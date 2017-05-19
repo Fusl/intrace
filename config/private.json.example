@@ -26,7 +26,8 @@
 			"http": true,
 			"websocket": true
 		},
-		"use_x_forwarded_for": true
+		"use_x_forwarded_for": true,
+		"debug": true
 	},
 	"http": {
 		"port": 8080
