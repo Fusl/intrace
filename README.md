@@ -1,6 +1,6 @@
 # intrace
 
-# intrace is a multi-purpose and multi-location looking glass supporting a wide variety of query types through some easy configuration files (BIRD, MTR, Ping &amp; Traceroute pre-configured)
+intrace is a multi-purpose and multi-location looking glass supporting a wide variety of query types through some easy configuration files (BIRD, MTR, Ping &amp; Traceroute pre-configured)
 
 ## Deploying a new intrace instance
 
