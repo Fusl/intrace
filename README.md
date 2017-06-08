@@ -9,7 +9,7 @@ intrace is a multi-purpose and multi-location looking glass supporting a wide va
 - Pull the latest master code from the repository: `git clone https://github.com/Fusl/intrace $HOME/intrace`
 - Change directory to intrace: `cd $HOME/intrace`
 - Copy the example configuration files: `cp config/caps.json.example caps.json; cp private.json.example private.json; cp probes.json.example probes.json; cp public.json.example public.json`
-- Read through the [configiration reference](https://github.com/Fusl/intrace/wiki/intrace-API-and-config-reference#config-reference) and edit the `caps.json`, `private.json`, `probes.json` and `public.json` configuration files to your needs
+- Read through the [configuration reference](https://github.com/Fusl/intrace/wiki/intrace-API-and-config-reference#config-reference) and edit the `caps.json`, `private.json`, `probes.json` and `public.json` configuration files to your needs
 - Install package dependencies: `npm install`
 - Create a SSH keypair: `ssh-keygen -t ed25519`
 - Copy the SSH public key to all probe servers: `ssh-copy-id -i $HOME/.ssh/id_ed25519.pub user@hostname`
