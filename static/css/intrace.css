@@ -1,3 +1,9 @@
+.cap_probe .float_right .providerhome {
+	visibility: hidden;
+}
+.cap_probe:hover .float_right .providerhome {
+	visibility: visible;
+}
 .page-header {
 	margin-top: 20px;
 }
@@ -80,7 +86,7 @@ pre code {
 }
 .provider-toggle img {
 	height: 16px;
-	width: 16px;
+	max-width: 16px;
 }
 .asn {
 	font-size: 70%;

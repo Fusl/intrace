@@ -13,8 +13,16 @@
 		"-oServerAliveInterval=1",
 		"-oControlPath=/tmp/%r@%h:%p",
 		"-oControlMaster=auto",
-		"-oControlPersist=3600"
+		"-oControlPersist=yes"
 	],
+	"limiter": {
+		"windowMs": 3600000,
+		"max": 1000,
+		"delayAfter": 500,
+		"delayMs": 100,
+		"whitelist": ['127.0.0.1'],
+		"blacklist": []
+	},
 	"queue": {
 		"probe": 5,
 		"websocket": 20,

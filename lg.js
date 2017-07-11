@@ -10,8 +10,11 @@ var express       = require('express');
 var socketio      = require('socket.io');
 var crc32         = require('crc-32');
 var bases         = require('bases');
+var RateLimiter   = require('express-rate-limit');
+
 
 var app = express();
+app.enable('trust proxy', '0.0.0.0/0');
 var server = http.createServer(app);
 var io = socketio(server);
 
@@ -61,6 +64,23 @@ cvalid('private.json->logs->use_x_forwarded_for', config.logs.use_x_forwarded_fo
 cvalid('private.json->http',                      config.http,                     'object');
 cvalid('private.json->http->port',                config.http.port,                'uint'  );
 cvalid('private.json->logs->debug',               config.logs.debug,               'bool'  );
+cvalid('private.json->limiter',                   config.limiter,                  'object');
+cvalid('private.json->limiter->windowMs',         config.limiter.windowMs,         'uint'  );
+cvalid('private.json->limiter->max',              config.limiter.max,              'uint'  );
+cvalid('private.json->limiter->delayAfter',       config.limiter.delayAfter,       'uint'  );
+cvalid('private.json->limiter->delayMs',          config.limiter.delayMs,          'uint'  );
+cvalid('private.json->limiter->whitelist',        config.limiter.whitelist,        'array' );
+cvalid('private.json->limiter->blacklist',        config.limiter.blacklist,        'array' );
+
+var limiter = new RateLimiter({
+	windowMs: config.limiter.windowMs,
+	max: config.limiter.max,
+	delayAfter: config.limiter.delayAfter,
+	delayMs: config.limiter.delayMs,
+	skip: function (req, res) {
+		return config.limiter.whitelist.indexOf(req.ip.substr(0, 7) === '::ffff:' ? req.ip.substr(7) : req.ip) !== -1;
+	}
+});
 
 var shutdown = false;
 
@@ -218,7 +238,7 @@ app.use(function(req, res, next) {
 			"media-src 'none'",
 			"frame-src 'none'",
 			"frame-ancestors 'none'",
-			"font-src 'none'",
+			"font-src 'self' https://cdnjs.cloudflare.com/",
 			"connect-src 'self' wss://" + req.headers.host || ''
 		].join('; '),
 		'X-Content-Security-Policy': [
@@ -230,7 +250,7 @@ app.use(function(req, res, next) {
 			"media-src 'none'",
 			"frame-src 'none'",
 			"frame-ancestors 'none'",
-			"font-src 'none'",
+			"font-src 'self' https://cdnjs.cloudflare.com/",
 			"connect-src 'self' wss://" + req.headers.host || ''
 		].join('; '),
 		'X-WebKit-CSP': [
@@ -242,7 +262,7 @@ app.use(function(req, res, next) {
 			"media-src 'none'",
 			"frame-src 'none'",
 			"frame-ancestors 'none'",
-			"font-src 'none'",
+			"font-src 'self' https://cdnjs.cloudflare.com/",
 			"connect-src 'self' wss://" + req.headers.host || ''
 		].join('; '),
 		'Strict-Transport-Security': 'max-age=31536000',
@@ -259,7 +279,7 @@ app.use(function(req, res, next) {
 app.get('/ip', function (req, res) {
 	res.status(200);
 	res.setHeader('Content-Type', 'text/plain');
-	res.end(config.logs.use_x_forwarded_for ? req.headers['x-forwarded-for'] : req.socket.remoteAddress);
+	res.end(req.ip.substr(0, 7) === '::ffff:' ? req.ip.substr(7) : req.ip);
 });
 
 app.get('/config.json', function (req, res) {
@@ -280,7 +300,8 @@ app.get('/probes.json', function (req, res) {
 			residential: probes[probe].residential,
 			group:       probes[probe].group,
 			caps:        probes[probe].caps,
-			status:      probes[probe].status
+			status:      probes[probe].status,
+			providerurl: probes[probe].providerurl
 		};
 	});
 	res.status(200);
@@ -294,8 +315,11 @@ app.get('/caps.json', function (req, res) {
 	res.end(JSON.stringify(caps));
 });
 
-app.get(/^\/([a-zA-Z0-9]{4})\/([a-z]+)\/([0-9a-f:\\.]{1,39})$/, function (req, res) {
+app.get(/^\/([a-zA-Z0-9]{4})\/([a-z]+)\/([0-9a-f:\.]{1,39})$/, limiter, function (req, res) {
 	res.setHeader('Content-Type', 'text/plain');
+	if (config.limiter.blacklist.indexOf(req.ip.substr(0, 7) === '::ffff:' ? req.ip.substr(7) : req.ip) !== -1) {
+		return res.status(403) + res.end('403 Access Denied');
+	}
 	var query = {
 		probe: req.params[0],
 		type: req.params[1],
@@ -336,7 +360,7 @@ app.get(/^\/([a-zA-Z0-9]{4})\/([a-z]+)\/([0-9a-f:\\.]{1,39})$/, function (req, r
 		command: (caps[query.type]['cmd' + proto] || caps[query.type]['cmd'] || 'echo unsupported').replace(/\{\{TARGET\}\}/g, query.target).replace(/\{\{PROTO\}\}/g, proto)
 	});	
 	if (config.logs.requests && config.logs.requests.http) {
-		console.log(new Date(), 'enqueue-http', 'remote=' + (config.logs.use_x_forwarded_for ? req.headers['x-forwarded-for'] : req.socket.remoteAddress), 'type=' + query.type, 'probe=' + query.probe, 'target=' + query.target);
+		console.log(new Date(), 'enqueue-http', 'remote=' + (req.ip.substr(0, 7) === '::ffff:' ? req.ip.substr(7) : req.ip), 'type=' + query.type, 'probe=' + query.probe, 'target=' + query.target);
 	}
 });
 

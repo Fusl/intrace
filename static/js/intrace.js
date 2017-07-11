@@ -1,5 +1,35 @@
 jQuery(document).ready(function() {
-	jQuery('body').html('<a class="github-fork-ribbon" href="//github.com/Fusl/intrace" title="Fork me on GitHub">Fork me on GitHub</a><div class="container"><div class="row"><div class="col-xs-12"><div id="page-header" class="page-header"></div></div></div><div class="row row-margin"><div class="col-xs-12"><form><div class="input-group input-group-lg"><input type="text" class="form-control input-lg" id="target" placeholder="IP Address (e.g. ' + [Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256)].join('.') + ', ' + [Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256)].join('.') + ', ...)"><span class="input-group-btn"><button class="btn btn-primary btn-lg" id="runtest" type="submit">Run Test</button></span></div></form></div></div><div id="caps" class="row row-margin"></div><div id="probes" class="row row-margin"></div><div id="results" class="row"></div><div id="page-footer" class="footer"></div></div>');
+	jQuery('body').html(
+		'<a class="github-fork-ribbon" href="//github.com/Fusl/intrace" title="Fork me on GitHub">Fork me on GitHub</a>' +
+		'<div class="container">' +
+			'<div class="row">' +
+				'<div class="col-xs-12">' +
+					'<div id="page-header" class="page-header">' +
+					'</div>' +
+				'</div>' +
+			'</div>' +
+			'<div class="row row-margin">' +
+				'<div class="col-xs-12">' +
+					'<form>' +
+						'<div class="input-group input-group-lg">' +
+							'<input type="text" class="form-control input-lg" id="target" placeholder="IP Address (e.g. ' + [Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256)].join('.') + ', ' + [Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256), Math.floor(Math.random()*256)].join('.') + ', ...)">' +
+							'<span class="input-group-btn">' +
+								'<button class="btn btn-primary btn-lg" id="runtest" type="submit">Run Test</button>' +
+							'</span>' +
+						'</div>' +
+					'</form>' +
+				'</div>' +
+			'</div>' +
+			'<div id="caps" class="row row-margin">' +
+			'</div>' +
+			'<div id="probes" class="row row-margin">' +
+			'</div>' +
+			'<div id="results" class="row">' +
+			'</div>' +
+			'<div id="page-footer" class="footer">' +
+			'</div>' +
+		'</div>'
+	);
 	jQuery('#target').focus();
 	var capsmatch = {};
 	var seturlhash = function() {
@@ -141,7 +171,8 @@ jQuery(document).ready(function() {
 						probes[probe].city +
 					'</div>' +
 					'<div class="float_right">' +
-						'&nbsp;<a href="#" class="provider-toggle">' + probes[probe].provider + '</a> ' +
+						'&nbsp;<a href="' + probes[probe].providerurl + '" class="glyphicon glyphicon-home providerhome" aria-hidden="true"></a> ' +
+						'<a href="#" class="provider-toggle">' + probes[probe].provider + '</a> ' +
 						'<a target="_blank" href="https://bgpview.io/asn/' + probes[probe].asnumber + '" class="asn">' + probes[probe].asnumber + '</a> ' +
 						'<a href="#" class="provider-toggle"><img src="/providerlogos/' + md5(probes[probe].provider) + '.png" alt="" title="' + probes[probe].provider + '" onerror="this.onerror=null;this.src=\'/providerlogos/d41d8cd98f00b204e9800998ecf8427e.png\';" ></a>' +
 					'</div>' +

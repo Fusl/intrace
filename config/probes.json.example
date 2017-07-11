@@ -8,6 +8,7 @@
 		"host": "root@uslax.yourserver.tld",
 		"group": "North america",
 		"residential": false,
+		"providerurl": "https://yourprovider.net/",
 		"caps": {
 			"bgp": 4,
 			"mtr": 6,
@@ -24,6 +25,7 @@
 		"host": "root@atvie.somewhere.else",
 		"group": "Europe",
 		"residential": true,
+		"providerurl": "https://yourotherprovider.com/",
 		"caps": {
 			"bgp": 6,
 			"mtr": false,
