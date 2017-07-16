@@ -26,7 +26,7 @@ var public_config = require('./config/public.json');
 var caps = require('./config/caps.json');
 
 var hash = function (string) {
-	return ('000' + bases.toBase62(Math.abs(crc32.str(string)) % 14776336)).substr(-4);
+	return ('000' + bases.toBase64(Math.abs(crc32.str(string)) % 14776336)).substr(-5).replace('+', '-').replace('/', '_');
 };
 
 var cvalidator = {
