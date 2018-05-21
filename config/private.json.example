@@ -38,6 +38,7 @@
 		"debug": true
 	},
 	"http": {
+		"host": "*",
 		"port": 8080
 	}
 }
