@@ -62,6 +62,7 @@ cvalid('private.json->logs->requests->http',      config.logs.requests.http,    
 cvalid('private.json->logs->requests->websocket', config.logs.requests.websocket,  'bool'  );
 cvalid('private.json->logs->use_x_forwarded_for', config.logs.use_x_forwarded_for, 'bool'  );
 cvalid('private.json->http',                      config.http,                     'object');
+cvalid('private.json->http->host',                config.http.host,                'string');
 cvalid('private.json->http->port',                config.http.port,                'uint'  );
 cvalid('private.json->logs->debug',               config.logs.debug,               'bool'  );
 cvalid('private.json->limiter',                   config.limiter,                  'object');
@@ -439,7 +440,11 @@ io.on('connection', function(socket) {
 
 app.use(express.static('static'));
 
-server.listen(Number(process.env.PORT) || Number(config.http.port) || 3000);
+if (process.env.HOST || config.http.host && (process.env.HOST || config.http.host) != "*") {
+    server.listen(Number(process.env.PORT) || Number(config.http.port) || 3000, process.env.HOST || config.http.host);
+} else {
+    server.listen(Number(process.env.PORT) || Number(config.http.port) || 3000);
+}
 
 process.on('SIGINT', function () {
 	if (shutdown || !(execqueue.length() + execqueue.running())) {
