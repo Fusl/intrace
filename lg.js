@@ -239,7 +239,7 @@ app.use(function(req, res, next) {
 			"frame-src 'none'",
 			"frame-ancestors 'none'",
 			"font-src 'self' https://cdnjs.cloudflare.com/",
-			"connect-src 'self' wss://" + req.headers.host || ''
+			"connect-src 'self' wss://" + req.headers.orig_host || req.headers.host || ''
 		].join('; '),
 		'X-Content-Security-Policy': [
 			"default-src 'none'",
@@ -251,7 +251,7 @@ app.use(function(req, res, next) {
 			"frame-src 'none'",
 			"frame-ancestors 'none'",
 			"font-src 'self' https://cdnjs.cloudflare.com/",
-			"connect-src 'self' wss://" + req.headers.host || ''
+			"connect-src 'self' wss://" + req.headers.orig_host || req.headers.host || ''
 		].join('; '),
 		'X-WebKit-CSP': [
 			"default-src 'none'",
@@ -263,7 +263,7 @@ app.use(function(req, res, next) {
 			"frame-src 'none'",
 			"frame-ancestors 'none'",
 			"font-src 'self' https://cdnjs.cloudflare.com/",
-			"connect-src 'self' wss://" + req.headers.host || ''
+			"connect-src 'self' wss://" + req.headers.orig_host || req.headers.host || ''
 		].join('; '),
 		'Strict-Transport-Security': 'max-age=31536000',
 		'X-XSS-Protection': '1; mode=block',

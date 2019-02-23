@@ -19,6 +19,20 @@ intrace is a multi-purpose and multi-location looking glass supporting a wide va
 - Open the looking glass frontend in your browser: `http://<ip address>:<port number>/`
 - Additional step: Stop the looking glass (CTRL+C) and start it within tmux or screen: `tmux -Lintrace -f /dev/null new-session 'node lg.js'` or `screen -amdS intrace 'node lg.js'`
 
+## Using behind nginx proxy on a relative path
+
+In order for nginx reverse proxying to work, you must set the following additional nginx headers in its location block:
+
+```
+	location /mtr/ {
+		proxy_pass http://<host-or-ip-of-intrace-instance>:8080/;
+		proxy_http_version 1.1;
+		proxy_set_header Orig_Host $http_host;
+		proxy_set_header Upgrade $http_upgrade;
+		proxy_set_header Connection "upgrade";
+	}
+```
+
 ## Upgrading an existing intrace instance
 
 - Change directory to intrace: `cd $HOME/intrace`
