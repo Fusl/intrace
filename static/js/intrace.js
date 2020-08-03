@@ -87,7 +87,6 @@ jQuery(document).ready(function() {
 			progress = 0;
 		}
 		progress += (100 - progress) / 100;
-		console.log(progress);
 		jQuery('#query_' + id + '_progress_bar').data('progress', progress);
 		jQuery('#query_' + id + '_progress_bar').css({width: progress + '%'});
 		setTimeout(function () {
@@ -100,7 +99,7 @@ jQuery(document).ready(function() {
 		}
 		if (end) {
 			var slimtext = [];
-			if (capsmatch[res.query.type] !== false && capsmatch[res.query.type] !== null && capsmatch[res.query.type] !== undefined) {
+			if (capsmatch && res.query && res.query.type && capsmatch[res.query.type] !== false && capsmatch[res.query.type] !== null && capsmatch[res.query.type] !== undefined) {
 				if (typeof capsmatch[res.query.type] === 'string') {
 					slimtext = jQuery('#query_' + res.id).text().split('\n').map(function(line){return line.trim();}).filter(function(line){return new RegExp(capsmatch[res.query.type]).test(line);});
 				} else if (typeof capsmatch[res.query.type] === 'number' && capsmatch[res.query.type] > 0) {
@@ -251,6 +250,8 @@ jQuery(document).ready(function() {
 			proto = 4;
 		} else if (/^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/.test(target)) {
 			proto = 6;
+		} else if (validator.isFQDN(target, {require_tld: true, allow_underscores: true, allow_trailing_dot: true})) {
+			proto = 4;
 		}
 		if (!proto) {
 			return alert('Invalid IP address');

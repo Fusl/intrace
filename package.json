@@ -17,14 +17,15 @@
 	},
 	"homepage": "https://github.com/Fusl/intrace#readme",
 	"dependencies": {
-		"async": "*",
-		"ipaddr.js": "*",
-		"md5": "*",
-		"express": "*",
-		"socket.io": "*",
-		"bases": "*",
-		"crc-32": "*",
-		"express-rate-limit": "*"
+		"async": "^2.6.2",
+		"bases": "^0.2.1",
+		"crc-32": "^1.2.0",
+		"express": "^4.16.4",
+		"express-rate-limit": "^2.14.2",
+		"ipaddr.js": "^1.9.0",
+		"md5": "^2.2.1",
+		"socket.io": "^2.2.0",
+		"validator": "^10.11.0"
 	},
 	"keywords": [
 		"looking",

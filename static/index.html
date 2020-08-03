@@ -5,15 +5,15 @@
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<meta name="description" content="Run BGP, MTR, Ping and Traceroute lookups from anywhere around the world">
-		<meta name="author" content="FuslVZ">
+		<meta name="author" content="Silent Ghost">
 		<meta name="keywords" content="looking, glass, bgp, routing, full table" />
 		<meta name="robots" content="index,follow">
-		<title>FuslVZ Looking Glass</title>
-		<link rel="stylesheet" crossorigin="anonymous" integrity="sha512-6MXa8B6uaO18Hid6blRMetEIoPqHf7Ux1tnyIQdpt9qI5OACx7C+O3IVTr98vwGnlcg0LOLa02i9Y1HpVhlfiw==" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" />
-		<link rel="stylesheet" crossorigin="anonymous" integrity="sha512-tqup5t5XyJXlvX8b/E9pI0swGA4AugszFqvdWASa2/484oj4HW7UaXKwRmnMLKFp3ZWeTwjjCh6J40AvdUQhrA==" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap-theme.min.css" />
+		<title>MTR.sh Looking Glass</title>
+		<link rel="stylesheet" crossorigin="anonymous" href="/css/cyborg.css" />
 		<link rel="stylesheet" crossorigin="anonymous" integrity="sha512-hievggED+/IcfxhYRSr4Auo1jbiOczpqpLZwfTVL/6hFACdbI3WQ8S9NCX50gsM9QVE+zLk/8wb9TlgriFbX+Q==" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" />
 		<link rel="stylesheet" crossorigin="anonymous" integrity="sha512-H1oCUF0aJyQvMm579v9S1SwKcHCFtrL6piRRU6uFCiJclUpqyLMIPUVqLvWc60jEJ73Pwxj9pzravLy3srE8XA==" href="//cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.2.1/gh-fork-ribbon.min.css" />
 		<link rel="stylesheet" href="/css/intrace.css">
+		<link rel="stylesheet" href="/css/cyborg.intrace.css">
 		<!--[if lt IE 9]>
 			<link rel="stylesheet" crossorigin="anonymous" integrity="sha512-CAoZQ7NKKj53UEtZJ9GFa94QkPxCboIZZlMwSoKLsbL4dyCy2/ip7uEZoqzbT+b3qfdN/L/GODbNBrS7bKgyww==" href="//cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.2.1/gh-fork-ribbon.ie.min.css" />
 			<script crossorigin="anonymous" integrity="sha512-UDJtJXfzfsiPPgnI5S1000FPLBHMhvzAMX15I+qG2E2OAzC9P1JzUwJOfnypXiOH7MRPaqzhPbBGDNNj7zBfoA==" src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
@@ -27,8 +27,9 @@
 		<script crossorigin="anonymous" integrity="sha512-3P8rXCuGJdNZOnUx/03c1jOTnMn3rP63nBip5gOP2qmUh5YAdVAvFZ1E+QLZZbC1rtMrQb+mah3AfYW11RUrWA==" defer src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 		<script crossorigin="anonymous" integrity="sha512-BLT+loVwmqdzlGIU9gxbSpRUwhs9I1uWkNkdAJEUM82s337R9T0pBk007MwaJjVTGhOHsovV4y6o/IwscSAglw==" defer src="//cdnjs.cloudflare.com/ajax/libs/jquery-scrollTo/2.1.2/jquery.scrollTo.min.js"></script>
 		<script crossorigin="anonymous" integrity="sha512-F636MAkMAhtTplahL9F6KmTfxTmYcAcjcCkyu0f0voT3N/6vzAuJ4Num55a0gEJ+hRLHhdz3vDvZpf6kqgEa5w==" defer src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
-		<script crossorigin="anonymous" integrity="sha512-qXjK7fRhV6plK/Vpaknn+5Fe0dXhJqdbiQKpLghl0XKir10zEEzSNqheA1MY7nh9H8cu7giAYTibHTBvt37PQg==" defer src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.min.js"></script>
+		<script crossorigin="anonymous" integrity="sha512-v8ng/uGxkge3d1IJuEo6dJP8JViyvms0cly9pnbfRxT6/31c3dRWxIiwGnMSWwZjHKOuY3EVmijs7k1jz/9bLA==" defer src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
 		<script crossorigin="anonymous" integrity="sha512-YNipwDctMJIKsH0MJPnX9Wm516Ky+DxdlO/OP+Hnn5XCG2P4Dqyjbq7nY7sH1a0fEbabawJLdfabMunK/Ku4cw==" defer src="//cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.7.0/js/md5.min.js"></script>
+		<script defer src="/js/validator.min.js"></script>
 		<script defer src="/js/intrace.js"></script>
 	</body>
 </html>
