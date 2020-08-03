@@ -2,25 +2,37 @@
 	"bgp": {
 		"name": "BGP Route Table Dump",
 		"highlight": "BGP.as_path: ",
-		"cmd4": "birdc -r 'show route all for {{TARGET}} primary' 2> /dev/null | tail -n+3 | fgrep -v -e 'BGP.next_hop: ' -e 'BGP.origin: ' -e 'BGP.local_pref: ' | sed -r 's/ from [0-9\\.]+\\]/ from 0.0.0.0]/'",
-		"cmd6": "birdc6 -r 'show route all for {{TARGET}} primary' 2> /dev/null | tail -n+3 | fgrep -v -e 'BGP.next_hop: ' -e 'BGP.origin: ' -e 'BGP.local_pref: ' | sed -r 's/ from [a-f0-9:]+\\]/ from ::]/'"
+		"cmd4": "birdc -r 'show route all for {{TARGET}} primary' 2> /dev/null | tail -n+3 | sed -r 's/BGP.next_hop: [0-9\\.]+$/BGP.next_hop: 0.0.0.0/;s/BGP.next_hop: [a-f0-9:]+$/BGP.next_hop: ::/;s/ from [0-9\\.]+\\]/ from 0.0.0.0]/;s/ from [a-f0-9:]+\\]/ from ::]/;s/unreachable \\[/unicast [/'",
+		"cmd6": "birdc6 -r 'show route all for {{TARGET}} primary' 2> /dev/null | tail -n+3 | sed -r 's/BGP.next_hop: [0-9\\.]+$/BGP.next_hop: 0.0.0.0/;s/BGP.next_hop: [a-f0-9:]+$/BGP.next_hop: ::/;s/ from [0-9\\.]+\\]/ from 0.0.0.0]/;s/ from [a-f0-9:]+\\]/ from ::]/;s/unreachable \\[/unicast [/'"
 	},
 	"mtr": {
 		"name": "MTR",
 		"highlight": 1,
-		"cmd4": "mtr -4zboLDRSNBAWVGJMXI -rwc10 -i 0.2 -m 50 {{TARGET}} 2> /dev/null | tail -n+2 | perl -pe 's/^(HOST: ([^ ]+))/\" \" x length($1)/gei'",
-		"cmd6": "mtr -6zboLDRSNBAWVGJMXI -rwc10 -i 0.2 -m 50 {{TARGET}} 2> /dev/null | tail -n+2 | perl -pe 's/^(HOST: ([^ ]+))/\" \" x length($1)/gei'"
+		"cmd4": "mtr -4boLDRSNBAWVGJMXI -rwc10 -i 0.2 -m 50 '{{TARGET}}' 2> /dev/null | tail -n+2 | perl -pe 's/^(HOST: ([^ ]+))/\" \" x (length($1) + 2)/gei'",
+		"cmd6": "mtr -6boLDRSNBAWVGJMXI -rwc10 -i 0.2 -m 50 '{{TARGET}}' 2> /dev/null | tail -n+2 | perl -pe 's/^(HOST: ([^ ]+))/\" \" x (length($1) + 2)/gei'"
 	},
 	"trace": {
 		"name": "Traceroute",
 		"highlight": 1,
-		"cmd4": "traceroute -A -q5 -w 2 -4 -m 50 {{TARGET}} 2> /dev/null",
-		"cmd6": "traceroute -A -q5 -w 2 -6 -m 50 {{TARGET}} 2> /dev/null"
+		"cmd4": "traceroute -A -q5 -w 2 -4 -m 50 '{{TARGET}}' 2> /dev/null",
+		"cmd6": "traceroute -A -q5 -w 2 -6 -m 50 '{{TARGET}}' 2> /dev/null"
 	},
 	"ping": {
 		"name": "Ping",
 		"highlight": 2,
-		"cmd4": "ping -c 10 -i 0.2 -t 255 {{TARGET}} 2>&1",
-		"cmd6": "ping6 -c 10 -i 0.2 -t 255 {{TARGET}} 2>&1"
+		"cmd4": "ping -c 10 -i 0.2 -t 255 '{{TARGET}}' 2>&1",
+		"cmd6": "ping6 -c 10 -i 0.2 -t 255 '{{TARGET}}' 2>&1"
+	},
+	"dnst": {
+		"name": "DNS +trace",
+		"highlight": ";; Received",
+		"cmd4": "dig @198.41.0.4 +noall +answer +trace +norecurse +timeout=1 +tries=5 A '{{TARGET}}' 2>&1; dig @198.41.0.4 +noall +answer +trace +norecurse +timeout=1 +tries=5 AAAA '{{TARGET}}' 2>&1",
+		"cmd6": "dig @198.41.0.4 +noall +answer +trace +norecurse +timeout=1 +tries=5 A '{{TARGET}}' 2>&1; dig @198.41.0.4 +noall +answer +trace +norecurse +timeout=1 +tries=5 AAAA '{{TARGET}}' 2>&1"
+	},
+	"dnsr": {
+		"name": "DNS Resolver Test",
+		"highlight": ";; Query time: ",
+		"cmd4": "rnd=$RANDOM; dig '@{{TARGET}}' +all +nsid A $(cat /proc/sys/kernel/random/uuid | cut -d- -f1).test.mtr.sh 2>&1; dig '@{{TARGET}}' +all +nsid AAAA $(cat /proc/sys/kernel/random/uuid | cut -d- -f1).test.mtr.sh 2>&1",
+		"cmd6": "rnd=$RANDOM; dig '@{{TARGET}}' +all +nsid A $(cat /proc/sys/kernel/random/uuid | cut -d- -f1).test.mtr.sh 2>&1; dig '@{{TARGET}}' +all +nsid AAAA $(cat /proc/sys/kernel/random/uuid | cut -d- -f1).test.mtr.sh 2>&1"
 	}
 }
