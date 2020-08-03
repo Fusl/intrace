@@ -1,3 +1,4 @@
+
 [
 	{
 		"country": "United States",
@@ -6,6 +7,7 @@
 		"provider": "Provider Name",
 		"asnumber": 12345,
 		"host": "root@uslax.yourserver.tld",
+		"port": 22,
 		"group": "North america",
 		"residential": false,
 		"providerurl": "https://yourprovider.net/",
@@ -23,6 +25,7 @@
 		"provider": "Another Provider",
 		"asnumber": 23456,
 		"host": "root@atvie.somewhere.else",
+		"port": 2222,
 		"group": "Europe",
 		"residential": true,
 		"providerurl": "https://yourotherprovider.com/",
