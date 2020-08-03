@@ -21,7 +21,8 @@
 		"delayAfter": 500,
 		"delayMs": 100,
 		"whitelist": ['127.0.0.1'],
-		"blacklist": []
+		"blacklist": [],
+		"message": "Access denied"
 	},
 	"queue": {
 		"probe": 5,
