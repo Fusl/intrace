@@ -2,43 +2,47 @@
 
 'use strict';
 
-var async         = require('async');
-var ipaddrjs      = require('ipaddr.js');
-var child_process = require('child_process');
-var http          = require('http');
-var express       = require('express');
-var socketio      = require('socket.io');
-var crc32         = require('crc-32');
-var bases         = require('bases');
-var RateLimiter   = require('express-rate-limit');
+process.env.LC_ALL = 'C';
+process.env.LANG = 'C';
+process.env.LANGUAGE = 'C';
 
+const async         = require('async');
+const ipaddrjs      = require('ipaddr.js');
+const child_process = require('child_process');
+const http          = require('http');
+const express       = require('express');
+const socketio      = require('socket.io');
+const crc32         = require('crc-32');
+const bases         = require('bases');
+const RateLimiter   = require('express-rate-limit');
+const validator     = require('validator');
 
-var app = express();
+const app = express();
 app.enable('trust proxy', '0.0.0.0/0');
-var server = http.createServer(app);
-var io = socketio(server);
+const server = http.createServer(app);
+const io = socketio(server);
 
-var is_bogon_v4 = require('./libs/is_bogon_v4.js');
-var is_bogon_v6 = require('./libs/is_bogon_v6.js');
+const is_bogon_v4 = require('./libs/is_bogon_v4.js');
+const is_bogon_v6 = require('./libs/is_bogon_v6.js');
 
-var config = require('./config/private.json');
-var public_config = require('./config/public.json');
-var caps = require('./config/caps.json');
+const config = require('./config/private.json');
+const public_config = require('./config/public.json');
+const caps = require('./config/caps.json');
 
-var hash = function (string) {
-	return ('000' + bases.toBase64(Math.abs(crc32.str(string)) % 14776336)).substr(-5).replace('+', '-').replace('/', '_');
+const hash = string => ('000' + bases.toBase64(Math.abs(crc32.str(string)) % 1073741824)).substr(-5).replace(/\+/g, '-').replace(/\//g, '_');
+
+const log = (...args) => console.error.apply(null, [(log.needs_newline ? '\n' : (log.needs_newline = false).toString().substr(0, 0)) + (new Date()).toISOString()].concat(...args));
+
+const cvalidator = {
+	object: str => str && typeof str === 'object' && str instanceof Object,
+	array:  str => str && typeof str === 'object' && str instanceof Array,
+	string: str => str && typeof str === 'string',
+	text:   str => str && typeof str === 'string' && str.trim() !== '',
+	int:    str =>        typeof str === 'number' && !isNaN(str) && str === Math.round(str),
+	uint:   str =>        typeof str === 'number' && !isNaN(str) && str === Math.round(str) && str >= 0,
+	bool:   str => str === true || str === false
 };
-
-var cvalidator = {
-	object: function (str) { return str && typeof str === 'object' && str instanceof Object;                       },
-	array:  function (str) { return str && typeof str === 'object' && str instanceof Array;                        },
-	string: function (str) { return str && typeof str === 'string';                                                },
-	text:   function (str) { return str && typeof str === 'string' && str.trim() !== '';                           },
-	int:    function (str) { return typeof str === 'number' && !isNaN(str) && str === Math.round(str);             },
-	uint:   function (str) { return typeof str === 'number' && !isNaN(str) && str === Math.round(str) && str >= 0; },
-	bool:   function (str) { return str === true || str === false;                                                 }
-};
-var cvalid = function (name, str, type, defaultvar) {
+const cvalid = (name, str, type, defaultvar) => {
 	if (!cvalidator[type](str)) {
 		if (typeof defaultvar === 'undefined') {
 			throw new Error('Configuration key ' + name + ' missing or invalid - Type of value is not ' + type);
@@ -73,37 +77,38 @@ cvalid('private.json->limiter->delayMs',          config.limiter.delayMs,       
 cvalid('private.json->limiter->whitelist',        config.limiter.whitelist,        'array' );
 cvalid('private.json->limiter->blacklist',        config.limiter.blacklist,        'array' );
 
-var limiter = new RateLimiter({
+const limiter = new RateLimiter({
 	windowMs: config.limiter.windowMs,
 	max: config.limiter.max,
 	delayAfter: config.limiter.delayAfter,
 	delayMs: config.limiter.delayMs,
-	skip: function (req, res) {
+	skip: (req, res) => {
 		return config.limiter.whitelist.indexOf(req.ip.substr(0, 7) === '::ffff:' ? req.ip.substr(7) : req.ip) !== -1;
-	}
+	},
+	message: cvalid('private.json->limiter->message', config.limiter.message, 'string', 'Rate limit exceeded')
 });
 
-var shutdown = false;
+let shutdown = false;
 
-var probes = Object.create(null);
+const probes = Object.create(null);
 
-var setstatus = function (probe, status) {
+const setstatus = (probe, status) => {
 	if (!probes[probe]) {
 		return;
 	}
 	if (probes[probe].status !== status) {
 		if (config.logs.status) {
-			console.log([new Date(), probe, probes[probe].unlocode, probes[probe].host, probes[probe].status, '->', status].map(function(val){if(val === null) { return 'null'; }; return val.toString('utf8');}).join(' '));
+			log(probe, probes[probe].unlocode, probes[probe].host, probes[probe].status, '->', status);
 		}
 		probes[probe].status = status;
 	}
 };
 
-var hostcheck = function (probe) {
+const hostcheck = (probe) => {
 	if (!probes[probe]) {
 		return;
 	}
-	var proc = child_process.spawn('ssh', config.ssh_defaults.concat([
+	const proc = child_process.spawn('ssh', config.ssh_defaults.concat([
 		'-p',
 		probes[probe].port || 22,
 		probes[probe].host,
@@ -111,51 +116,49 @@ var hostcheck = function (probe) {
 	]));
 	proc.stdout.resume();
 	proc.stderr.resume();
-	proc.once('exit', function (code) {
+	proc.once('exit', code => {
 		setstatus(probe, code === 0);
-		setTimeout(function () {
+		setTimeout(() => {
 			hostcheck(probe);
 		}, 5000);
 	});
 	if (config.logs.debug) {
-		proc.stdout.on('data', function (chunk) {
-			console.log('Probe ' + probe + ' stdout:', chunk.toString('utf8'));
+		proc.stdout.on('data', chunk => {
+			log('Probe ' + probe + ' stdout:', chunk.toString('utf8'));
 		});
-		proc.stderr.on('data', function (chunk) {
-			console.log('Probe ' + probe + ' stderr:', chunk.toString('utf8'));
+		proc.stderr.on('data', chunk => {
+			log('Probe ' + probe + ' stderr:', chunk.toString('utf8'));
 		});
 	}
 };
 
-var hostexec = function (probe, command, resock, done) {
-	var timeout_time = 30000;
+const hostexec = (probe, command, resock, done) => {
+	const timeout_time = 30000;
 	if (!probes[probe] || !probes[probe].status) {
 		return resock.end() + done();
-	}	
-	var closed = false;
-	var timeout = setTimeout(function () {
+	}
+	let closed = false;
+	const handleTimeout = () => {
 		closed = true;
 		resock.end() + done();
-	}, timeout_time);
-	var proc = child_process.spawn('ssh', config.ssh_defaults.concat([
+	}
+	let timeout = setTimeout(handleTimeout, timeout_time);
+	const proc = child_process.spawn('ssh', config.ssh_defaults.concat([
 		'-p',
 		probes[probe].port || 22,
 		probes[probe].host,
 		command
 	]));
-	var ended = false;
-	proc.stdout.on('data', function (chunk) {
+	let ended = false;
+	proc.stdout.on('data', chunk => {
 		if (closed) {
 			return;
 		}
 		clearTimeout(timeout);
-		timeout = setTimeout(function () {
-			closed = true;
-			resock.end() + done();
-		}, timeout_time);
+		timeout = setTimeout(handleTimeout, timeout_time);
 		resock.write(chunk);
 	});
-	proc.stdout.once('end', function () {
+	proc.stdout.once('end', () => {
 		if (closed) {
 			return;
 		}
@@ -165,18 +168,15 @@ var hostexec = function (probe, command, resock, done) {
 		}
 		resock.end() + done();
 	});
-	proc.stderr.on('data', function (chunk) {
+	proc.stderr.on('data', chunk => {
 		if (closed) {
 			return;
 		}
 		clearTimeout(timeout);
-		timeout = setTimeout(function () {
-			closed = true;
-			resock.end() + done();
-		}, timeout_time);
+		timeout = setTimeout(handleTimeout, timeout_time);
 		resock.write(chunk);
 	});
-	proc.stderr.once('end', function () {
+	proc.stderr.once('end', () => {
 		if (closed) {
 			return;
 		}
@@ -188,7 +188,7 @@ var hostexec = function (probe, command, resock, done) {
 	});
 };
 
-var execqueue = async.queue(function (task, callback) {
+const execqueue = async.queue((task, callback) => {
 	if (task.resock.socket.destroyed) {
 		return callback();
 	}
@@ -198,7 +198,7 @@ var execqueue = async.queue(function (task, callback) {
 	probes[task.probe].queue.push(task, callback);
 }, config.queue.global);
 
-require('./config/probes.json').forEach(function (host) {
+require('./config/probes.json').forEach(host => {
 	cvalid('probes.json->*->host->country',  host.country,  'text');
 	cvalid('probes.json->*->host->city',     host.city,     'text');
 	cvalid('probes.json->*->host->unlocode', host.unlocode, 'text');
@@ -207,7 +207,7 @@ require('./config/probes.json').forEach(function (host) {
 	cvalid('probes.json->*->host->host',     host.host,     'text');
 	cvalid('probes.json->*->host->group',    host.group,    'text');
 	cvalid('probes.json->*->host->caps',     host.caps,     'object');
-	var probe = hash([
+	const probe = hash([
 		config.probe_id_hash,
 		host.country,
 		host.city,
@@ -218,80 +218,80 @@ require('./config/probes.json').forEach(function (host) {
 		host.group
 	].join('\u0000'));
 	host.status = null;
-	host.queue = async.queue(function (task, callback) {
+	host.queue = async.queue((task, callback) => {
 		if (task.resock.socket.destroyed) {
 			return callback();
 		}
 		hostexec(task.probe, task.command, task.resock, callback);
 	}, config.queue.probe);
 	probes[probe] = host;
-	hostcheck(probe);	
+	hostcheck(probe);
 });
 
-app.use(function(req, res, next) {
-	var headers = {
+app.use((req, res, next) => {
+	const headers = {
 		'Content-Security-Policy': [
 			"default-src 'none'",
-			"script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/",
+			"script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/ http://cdnjs.cloudflare.com/",
 			"object-src 'none'",
-			"style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/",
-			"img-src 'self'",
+			"style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/ http://cdnjs.cloudflare.com/ https://fonts.googleapis.com/ http://fonts.googleapis.com/ https://fonts.gstatic.com/ http://fonts.gstatic.com/",
 			"media-src 'none'",
+			"img-src 'self'",
 			"frame-src 'none'",
 			"frame-ancestors 'none'",
-			"font-src 'self' https://cdnjs.cloudflare.com/",
-			"connect-src 'self' wss://" + req.headers.orig_host || req.headers.host || ''
+			"font-src 'self' https://cdnjs.cloudflare.com/ http://cdnjs.cloudflare.com/ https://fonts.gstatic.com/ http://fonts.gstatic.com/",
+			"connect-src 'self' wss://" + (req.headers.orig_host || req.headers.host || '') + " ws://" + (req.headers.orig_host || req.headers.host || '')
 		].join('; '),
 		'X-Content-Security-Policy': [
 			"default-src 'none'",
-			"script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/",
+			"script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/ http://cdnjs.cloudflare.com/",
 			"object-src 'none'",
-			"style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/",
-			"img-src 'self'",
+			"style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/ http://cdnjs.cloudflare.com/ https://fonts.googleapis.com/ http://fonts.googleapis.com/ https://fonts.gstatic.com/ http://fonts.gstatic.com/",
 			"media-src 'none'",
+			"img-src 'self'",
 			"frame-src 'none'",
 			"frame-ancestors 'none'",
-			"font-src 'self' https://cdnjs.cloudflare.com/",
-			"connect-src 'self' wss://" + req.headers.orig_host || req.headers.host || ''
+			"font-src 'self' https://cdnjs.cloudflare.com/ http://cdnjs.cloudflare.com/ https://fonts.gstatic.com/ http://fonts.gstatic.com/",
+			"connect-src 'self' wss://" + (req.headers.orig_host || req.headers.host || '') + " ws://" + (req.headers.orig_host || req.headers.host || '')
 		].join('; '),
 		'X-WebKit-CSP': [
 			"default-src 'none'",
-			"script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/",
+			"script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/ http://cdnjs.cloudflare.com/",
 			"object-src 'none'",
-			"style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/",
-			"img-src 'self'",
+			"style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/ http://cdnjs.cloudflare.com/ https://fonts.googleapis.com/ http://fonts.googleapis.com/ https://fonts.gstatic.com/ http://fonts.gstatic.com/",
 			"media-src 'none'",
+			"img-src 'self'",
 			"frame-src 'none'",
 			"frame-ancestors 'none'",
-			"font-src 'self' https://cdnjs.cloudflare.com/",
-			"connect-src 'self' wss://" + req.headers.orig_host || req.headers.host || ''
+			"font-src 'self' https://cdnjs.cloudflare.com/ http://cdnjs.cloudflare.com/ https://fonts.gstatic.com/ http://fonts.gstatic.com/",
+			"connect-src 'self' wss://" + (req.headers.orig_host || req.headers.host || '') + " ws://" + (req.headers.orig_host || req.headers.host || '')
 		].join('; '),
 		'Strict-Transport-Security': 'max-age=31536000',
 		'X-XSS-Protection': '1; mode=block',
 		'X-Frame-Options': 'SAMEORIGIN',
 		'Referrer-Policy': 'no-referrer'
 	};
-	Object.keys(headers).forEach(function (header_key) {
+	Object.keys(headers).forEach(header_key => {
 		res.setHeader(header_key, headers[header_key]);
 	});
 	return next();
 });
 
-app.get('/ip', function (req, res) {
+app.get('/ip', (req, res) => {
 	res.status(200);
 	res.setHeader('Content-Type', 'text/plain');
 	res.end(req.ip.substr(0, 7) === '::ffff:' ? req.ip.substr(7) : req.ip);
 });
 
-app.get('/config.json', function (req, res) {
+app.get('/config.json', (req, res) => {
 	res.status(200);
 	res.setHeader('Content-Type', 'application/json');
 	res.end(JSON.stringify(public_config));
 });
 
-app.get('/probes.json', function (req, res) {
-	var probelist = Object.create(null);
-	Object.keys(probes).forEach(function (probe) {
+app.get('/probes.json', (req, res) => {
+	const probelist = Object.create(null);
+	Object.keys(probes).forEach(probe => {
 		probelist[probe] = {
 			country:     probes[probe].country,
 			city:        probes[probe].city,
@@ -310,18 +310,18 @@ app.get('/probes.json', function (req, res) {
 	res.end(JSON.stringify(probelist));
 });
 
-app.get('/caps.json', function (req, res) {
+app.get('/caps.json', (req, res) => {
 	res.status(200);
 	res.setHeader('Content-Type', 'application/json');
 	res.end(JSON.stringify(caps));
 });
 
-app.get(/^\/([a-zA-Z0-9]{4})\/([a-z]+)\/([0-9a-f:\.]{1,39})$/, limiter, function (req, res) {
+app.get(/^\/([a-zA-Z0-9_-]{5})\/([a-z]+)\/(.*)$/, limiter, (req, res) => {
 	res.setHeader('Content-Type', 'text/plain');
 	if (config.limiter.blacklist.indexOf(req.ip.substr(0, 7) === '::ffff:' ? req.ip.substr(7) : req.ip) !== -1) {
-		return res.status(403) + res.end('403 Access Denied');
+		return res.status(403) + cvalid('private.json->limiter->blmessage', config.limiter.blmessage, 'string', 'Access denied');
 	}
-	var query = {
+	const query = {
 		probe: req.params[0],
 		type: req.params[1],
 		target: req.params[2]
@@ -340,10 +340,10 @@ app.get(/^\/([a-zA-Z0-9]{4})\/([a-z]+)\/([0-9a-f:\.]{1,39})$/, limiter, function
 	) {
 		return res.status(404) + res.end('404 Not Found');
 	}
-	var proto = ipaddrjs.IPv4.isValidFourPartDecimal(query.target) ? 4 : ipaddrjs.IPv6.isValid(query.target) ? 6 : null;
+	const proto = ipaddrjs.IPv4.isValidFourPartDecimal(query.target) ? 4 : ipaddrjs.IPv6.isValid(query.target) ? 6 : validator.isFQDN(query.target, {require_tld: true, allow_underscores: true, allow_trailing_dot: true}) ? 4 : null;
 	if (
 		!proto ||
-		(proto === 4 && is_bogon_v4(query.target)) ||
+		(proto === 4 && is_bogon_v4(query.target) && !validator.isFQDN(query.target, {require_tld: true, allow_underscores: true, allow_trailing_dot: true})) ||
 		(proto === 6 && is_bogon_v6(query.target)) ||
 		!(
 			probes[query.probe].caps[query.type] === true ||
@@ -359,26 +359,26 @@ app.get(/^\/([a-zA-Z0-9]{4})\/([a-z]+)\/([0-9a-f:\.]{1,39})$/, limiter, function
 		resock: res,
 		probe: query.probe,
 		command: (caps[query.type]['cmd' + proto] || caps[query.type]['cmd'] || 'echo unsupported').replace(/\{\{TARGET\}\}/g, query.target).replace(/\{\{PROTO\}\}/g, proto)
-	});	
-	if (config.logs.requests && config.logs.requests.http) {
-		console.log(new Date(), 'enqueue-http', 'remote=' + (req.ip.substr(0, 7) === '::ffff:' ? req.ip.substr(7) : req.ip), 'type=' + query.type, 'probe=' + query.probe, 'target=' + query.target);
+	});
+	if (config.logs.requests && config.logs.requests.http && config.limiter.whitelist.indexOf(req.ip.substr(0, 7) === '::ffff:' ? req.ip.substr(7) : req.ip) === -1) {
+		log('enqueue-http', 'remote=' + (req.ip.substr(0, 7) === '::ffff:' ? req.ip.substr(7) : req.ip), 'type=' + query.type, 'probe=' + query.probe, 'target=' + query.target);
 	}
 });
 
-io.on('connection', function(socket) {
-	var disconnected = false;
-	var queue = async.queue(function (task, callback) {
+io.on('connection', socket => {
+	let disconnected = false;
+	const queue = async.queue((task, callback) => {
 		execqueue.push(task, callback);
 	}, config.queue.websocket);
-	var resock_socket = {
+	const resock_socket = {
 		destroyed: false
 	};
-	socket.on('disconnect', function () {
+	socket.on('disconnect', () => {
 		queue.kill();
 		disconnected = true;
 		resock_socket.destroyed = true;
 	});
-	socket.on('exec', function (query) {
+	socket.on('exec', query => {
 		if (!query.id || typeof query.id !== 'string') {
 			return;
 		}
@@ -396,10 +396,10 @@ io.on('connection', function(socket) {
 		) {
 			return socket.emit('err', {query: query, id: query.id, data: 404});
 		}
-		var proto = ipaddrjs.IPv4.isValidFourPartDecimal(query.target) ? 4 : ipaddrjs.IPv6.isValid(query.target) ? 6 : null;
+		const proto = ipaddrjs.IPv4.isValidFourPartDecimal(query.target) ? 4 : ipaddrjs.IPv6.isValid(query.target) ? 6 : validator.isFQDN(query.target, {require_tld: true, allow_underscores: true, allow_trailing_dot: true}) ? 4 : null;
 		if (
 			!proto ||
-			(proto === 4 && is_bogon_v4(query.target)) ||
+			(proto === 4 && is_bogon_v4(query.target) && !validator.isFQDN(query.target, {require_tld: true, allow_underscores: true, allow_trailing_dot: true})) ||
 			(proto === 6 && is_bogon_v6(query.target)) ||
 			!(
 				probes[query.probe].caps[query.type] === true ||
@@ -408,20 +408,20 @@ io.on('connection', function(socket) {
 		) {
 			return socket.emit('err', {query: query, id: query.id, data: 404});
 		}
-		var resock = {
-			write: function (chunk) {
+		const resock = {
+			write: chunk => {
 				if (disconnected) {
 					return;
 				}
 				socket.emit('data', {query: query, id: query.id, data: chunk ? chunk.toString('utf8') : null});
 			},
-			end: function (chunk) {
+			end: chunk => {
 				if (disconnected) {
 					return;
 				}
 				socket.emit('end', {query: query, id: query.id, data: chunk ? chunk.toString('utf8') : null});
 			},
-			status: new Function(),
+			status: () => {},
 			socket: resock_socket
 		};
 		if (queue.length() >= queue.concurrency * 10) {
@@ -433,7 +433,7 @@ io.on('connection', function(socket) {
 			command: (caps[query.type]['cmd' + proto] || caps[query.type]['cmd'] || 'echo unsupported').replace(/\{\{TARGET\}\}/g, query.target).replace(/\{\{PROTO\}\}/g, proto)
 		});
 		if (config.logs.requests && config.logs.requests.websocket) {
-			console.log(new Date(), 'enqueue-websocket', 'remote=' + (config.logs.use_x_forwarded_for ? socket.client.request.headers['x-forwarded-for'] : socket.request.connection.remoteAddress), 'type=' + query.type, 'probe=' + query.probe, 'target=' + query.target);
+			log('enqueue-websocket', 'remote=' + (config.logs.use_x_forwarded_for ? socket.client.request.headers['x-forwarded-for'] : socket.request.connection.remoteAddress), 'type=' + query.type, 'probe=' + query.probe, 'target=' + query.target);
 		}
 	});
 });
@@ -446,14 +446,14 @@ if (process.env.HOST || config.http.host && (process.env.HOST || config.http.hos
     server.listen(Number(process.env.PORT) || Number(config.http.port) || 3000);
 }
 
-process.on('SIGINT', function () {
+process.on('SIGINT', () => {
 	if (shutdown || !(execqueue.length() + execqueue.running())) {
 		return process.exit(0);
 	}
 	shutdown = true; // Don't accept any more exec requests over websocket or keep-alive HTTP connections
 	server.close(); // Close down the HTTP server
-	console.log('^C pressed - Clean shutdown initiated (waiting for ' + (execqueue.length() + execqueue.running()) + ' tasks to finish) - Press ^C again to exit immediately');
-	execqueue.drain = function () {
+	log('^C pressed - Clean shutdown initiated (waiting for ' + (execqueue.length() + execqueue.running()) + ' tasks to finish) - Press ^C again to exit immediately');
+	execqueue.drain = () => {
 		process.exit(0);
 	};
 });
