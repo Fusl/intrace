@@ -8,7 +8,7 @@ intrace is a multi-purpose and multi-location looking glass supporting a wide va
 - Install git and tmux or screen on the looking glass server: `sudo apt-get install git-core tmux/screen` or `yum install git tmux/screen`
 - Pull the latest master code from the repository: `git clone https://github.com/Fusl/intrace $HOME/intrace`
 - Change directory to intrace: `cd $HOME/intrace`
-- Copy the example configuration files: `cp config/caps.json.example caps.json; cp private.json.example private.json; cp probes.json.example probes.json; cp public.json.example public.json`
+- Copy the example configuration files: `cp config/caps.json.example config/caps.json; cp config/private.json.example config/private.json; cp config/probes.json.example config/probes.json; cp config/public.json.example config/public.json`
 - Read through the [configuration reference](https://github.com/Fusl/intrace/wiki/intrace-API-and-config-reference#config-reference) and edit the `caps.json`, `private.json`, `probes.json` and `public.json` configuration files to your needs
 - Install package dependencies: `npm install`
 - Create a SSH keypair: `ssh-keygen -t ed25519`
